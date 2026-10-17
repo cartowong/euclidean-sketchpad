@@ -31,7 +31,11 @@ Download the `.dmg` file, open it, and drag **Euclidean Sketchpad** to your Appl
 
 > **Note:** The app is not code-signed. On first launch, you may need to right-click the app and select "Open", then click "Open" in the dialog to bypass Gatekeeper.
 
-### Windows / Linux
+### Windows
+
+Download the `.msi` file and run it to install **Euclidean Sketchpad**. The installer lets you choose the installation directory and optionally adds a Start menu entry.
+
+### Linux
 
 Pre-built installers are not yet available. See [Building from Source](#building-from-source) below.
 
@@ -97,15 +101,15 @@ On Windows, use `gradlew.bat run` instead.
 
 ### Package as a native installer
 
-To build a macOS `.dmg` installer:
-
 ```bash
 ./gradlew jpackage
 ```
 
-The output will be at `build/jpackage/EuclideanSketchpad-1.0.0.dmg`.
+This produces a platform-specific installer:
+- **macOS**: `build/jpackage/EuclideanSketchpad-1.0.0.dmg`
+- **Windows**: `build/jpackage/EuclideanSketchpad-1.0.0.msi`
 
-To build just the `.app` bundle (faster, useful for testing):
+On macOS, you can also build just the `.app` bundle (faster, useful for testing):
 
 ```bash
 ./gradlew jpackageImage

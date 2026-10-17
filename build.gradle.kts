@@ -40,15 +40,29 @@ runtime {
     modules.set(listOf("java.base", "java.desktop", "java.logging", "jdk.unsupported"))
     options.set(listOf("--strip-debug", "--no-header-files", "--no-man-pages"))
 
+    val currentOs = org.gradle.internal.os.OperatingSystem.current()
+
     jpackage {
         appVersion = "1.0.0"
         imageName = "Euclidean Sketchpad"
         installerName = "EuclideanSketchpad"
-        installerType = "dmg"
-        imageOptions = listOf("--icon", "${project.projectDir}/packaging/macos/EuclideanSketchpad.icns")
-        installerOptions = listOf(
-            "--vendor", "MathVisuals",
-            "--mac-package-name", "Euclidean Sketchpad"
-        )
+
+        if (currentOs.isMacOsX) {
+            installerType = "dmg"
+            imageOptions = listOf("--icon", "${project.projectDir}/packaging/macos/EuclideanSketchpad.icns")
+            installerOptions = listOf(
+                "--vendor", "MathVisuals",
+                "--mac-package-name", "Euclidean Sketchpad"
+            )
+        } else if (currentOs.isWindows) {
+            installerType = "msi"
+            imageOptions = listOf("--icon", "${project.projectDir}/packaging/windows/EuclideanSketchpad.ico")
+            installerOptions = listOf(
+                "--vendor", "MathVisuals",
+                "--win-dir-chooser",
+                "--win-menu",
+                "--win-shortcut-prompt"
+            )
+        }
     }
 }
