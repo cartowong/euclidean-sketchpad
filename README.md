@@ -37,6 +37,8 @@ Pre-built installers are not yet available. See [Building from Source](#building
 
 ## Building from Source
 
+> The rest of this README is for developers who want to build the project from source. If you just want to use the app, download the installer from the [Releases](https://github.com/cartowong/euclidean-sketchpad/releases) page above.
+
 ### Prerequisites
 
 #### Java Development Kit (JDK) 21
