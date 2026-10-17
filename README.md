@@ -21,9 +21,25 @@
 - **Export** — save diagrams as PNG or SVG with canvas, custom bounding box, or auto-fit methods
 - **Undo/redo** — full snapshot-based undo history
 
-## Prerequisites
+## Download
 
-### Java Development Kit (JDK) 21
+Download the latest release from the [Releases](https://github.com/cartowong/euclidean-sketchpad/releases) page.
+
+### macOS
+
+Download the `.dmg` file, open it, and drag **Euclidean Sketchpad** to your Applications folder.
+
+> **Note:** The app is not code-signed. On first launch, you may need to right-click the app and select "Open", then click "Open" in the dialog to bypass Gatekeeper.
+
+### Windows / Linux
+
+Pre-built installers are not yet available. See [Building from Source](#building-from-source) below.
+
+## Building from Source
+
+### Prerequisites
+
+#### Java Development Kit (JDK) 21
 
 The project requires **JDK 21** or later.
 
@@ -59,18 +75,9 @@ java -version
 
 You should see output indicating version 21 or later.
 
-### Gradle
+#### Gradle
 
-You do **not** need to install Gradle separately. The project includes the Gradle Wrapper (`gradlew`), which automatically downloads the correct Gradle version (8.5) on first run.
-
-## Getting Started
-
-Clone the repository and run:
-
-```bash
-git clone https://github.com/<your-username>/EuclideanSketchpad.git
-cd EuclideanSketchpad
-```
+You do **not** need to install Gradle separately. The project includes the Gradle Wrapper (`gradlew` / `gradlew.bat`), which automatically downloads the correct Gradle version on first run.
 
 ### Run the application
 
@@ -103,8 +110,6 @@ To build just the `.app` bundle (faster, useful for testing):
 ```
 
 The output will be at `build/jpackage/Euclidean Sketchpad.app`.
-
-> **Note:** `jpackage` requires JDK 21 with `jpackage` included (standard in most distributions). The resulting app is not code-signed.
 
 ## Changelog
 
