@@ -1,0 +1,54 @@
+plugins {
+    kotlin("jvm") version "1.9.22"
+    kotlin("plugin.serialization") version "1.9.22"
+    id("org.openjfx.javafxplugin") version "0.1.0"
+    id("org.beryx.runtime") version "1.13.1"
+    application
+}
+
+group = "euclideansketchpad"
+version = "0.1.0"
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = "21.0.1"
+    modules("javafx.controls", "javafx.graphics", "javafx.swing")
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClass.set("euclideansketchpad.MainKt")
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+runtime {
+    modules.set(listOf("java.base", "java.desktop", "java.logging", "jdk.unsupported"))
+    options.set(listOf("--strip-debug", "--no-header-files", "--no-man-pages"))
+
+    jpackage {
+        appVersion = "1.0.0"
+        imageName = "Euclidean Sketchpad"
+        installerName = "EuclideanSketchpad"
+        installerType = "dmg"
+        imageOptions = listOf("--icon", "${project.projectDir}/packaging/macos/EuclideanSketchpad.icns")
+        installerOptions = listOf(
+            "--vendor", "MathVisuals",
+            "--mac-package-name", "Euclidean Sketchpad"
+        )
+    }
+}
