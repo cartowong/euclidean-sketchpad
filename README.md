@@ -29,7 +29,11 @@ Download the latest release from the [Releases](https://github.com/cartowong/euc
 
 Download the `.dmg` file, open it, and drag **Euclidean Sketchpad** to your Applications folder.
 
-> **Note:** The app is not code-signed. On first launch, you may need to right-click the app and select "Open", then click "Open" in the dialog to bypass Gatekeeper.
+> **Note:** The app is not code-signed. On first launch, macOS will block it. To open it:
+> 1. Double-click the app to trigger the warning, then dismiss it.
+> 2. Go to **System Settings → Privacy & Security**.
+> 3. Scroll down to find the message about Euclidean Sketchpad being blocked.
+> 4. Click **Open Anyway** and enter your password.
 
 ### Windows
 
