@@ -622,7 +622,7 @@ Exports at the canvas's current screen size. Width/height fields are non-editabl
   - All visible points.
   - Parent points of all visible linears and regions (regardless of parent visibility).
   - Extremal points of visible circles (top, bottom, left, right of each circle).
-  - 5% margin on all sides.
+  - 10% margin on all sides (accommodates the 5% clip inset used during export rendering, leaving ~5% visible margin between arrowheads and image edge).
   - Degenerate fallback: if bounding box is empty, uses `[-100, -100, 100, 100]`. If width or height is near zero, pads by 50 units.
 
 ### 12.5 Export Rendering

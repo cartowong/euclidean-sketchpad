@@ -17,9 +17,6 @@ import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import javafx.scene.transform.Affine
 import kotlin.math.abs
-import kotlin.math.floor
-import kotlin.math.log10
-import kotlin.math.pow
 
 class CanvasPane(
     private val manager: GeometricObjectManager,
@@ -384,15 +381,7 @@ class CanvasPane(
         val scale = abs(transform.mxx)
         val counterScale = if (scale != 0.0) 1.0 / scale else 1.0
 
-        // Adaptive grid spacing: target 40-100px screen spacing
-        val rawSpacing = 50.0 * counterScale
-        val magnitude = 10.0.pow(floor(log10(rawSpacing)))
-        val normalized = rawSpacing / magnitude
-        val spacing = when {
-            normalized < 2.0 -> magnitude
-            normalized < 5.0 -> 2.0 * magnitude
-            else -> 5.0 * magnitude
-        }
+        val spacing = GeometryUtils.computeAdaptiveGridSpacing(scale)
 
         val extent = 5000.0 * counterScale
         val gridColor = Color.gray(0.85)

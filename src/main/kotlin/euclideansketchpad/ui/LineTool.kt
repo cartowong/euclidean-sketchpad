@@ -1,6 +1,10 @@
 package euclideansketchpad.ui
 
 import euclideansketchpad.geometry.*
+import euclideansketchpad.geometry.GeometryUtils.ARROWHEAD_SIZE
+import euclideansketchpad.geometry.GeometryUtils.LINE_EXTENT
+import euclideansketchpad.geometry.GeometryUtils.POINT_RADIUS
+import euclideansketchpad.geometry.GeometryUtils.STROKE_WIDTH
 import euclideansketchpad.model.GeometricObjectManager
 import euclideansketchpad.model.ManagerState
 import euclideansketchpad.model.UndoManager
@@ -26,13 +30,6 @@ class LineTool(
 ) : Tool {
 
     var subMode: LineSubMode = LineSubMode.SEGMENT
-
-    private companion object {
-        const val POINT_RADIUS = 4.0
-        const val STROKE_WIDTH = 2.0
-        const val LINE_EXTENT = 10000.0
-        const val ARROWHEAD_SIZE = 8.0
-    }
 
     // First point state
     private var firstPointId: Int? = null
@@ -139,13 +136,7 @@ class LineTool(
         if (len == 0.0) return
 
         // Compute clip rect (viewport with 5% margin) matching GeometryRenderer
-        val clipRect = viewportProvider()?.let { vb ->
-            val w = vb[2] - vb[0]
-            val h = vb[3] - vb[1]
-            val mx = w * 0.05
-            val my = h * 0.05
-            doubleArrayOf(vb[0] + mx, vb[1] + my, vb[2] - mx, vb[3] - my)
-        }
+        val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
 
         when (subMode) {
             LineSubMode.SEGMENT -> {
@@ -217,14 +208,8 @@ class LineTool(
     }
 
     private fun drawPreviewArrowhead(tipX: Double, tipY: Double, dirX: Double, dirY: Double, counterScale: Double) {
-        val size = ARROWHEAD_SIZE * counterScale
-        val perpX = -dirY; val perpY = dirX
-        val baseX = tipX - dirX * size; val baseY = tipY - dirY * size
-        val arrow = javafx.scene.shape.Polygon(
-            tipX, tipY,
-            baseX + perpX * size * 0.4, baseY + perpY * size * 0.4,
-            baseX - perpX * size * 0.4, baseY - perpY * size * 0.4
-        )
+        val v = GeometryUtils.computeArrowheadVertices(tipX, tipY, dirX, dirY, ARROWHEAD_SIZE * counterScale)
+        val arrow = javafx.scene.shape.Polygon(v[0], v[1], v[2], v[3], v[4], v[5])
         arrow.fill = Color.BLACK
         arrow.stroke = Color.BLACK
         arrow.opacity = 0.4
