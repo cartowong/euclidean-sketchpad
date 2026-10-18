@@ -43,7 +43,10 @@ runtime {
     val currentOs = org.gradle.internal.os.OperatingSystem.current()
 
     jpackage {
-        appVersion = "1.0.0"
+        // Read APP_VERSION from Main.kt so there's a single source of truth
+        val mainKt = file("src/main/kotlin/euclideansketchpad/Main.kt").readText()
+        val versionMatch = Regex("""APP_VERSION\s*=\s*"([^"]+)"""").find(mainKt)
+        appVersion = versionMatch?.groupValues?.get(1) ?: "1.0.0"
         imageName = "Euclidean Sketchpad"
         installerName = "EuclideanSketchpad"
 
