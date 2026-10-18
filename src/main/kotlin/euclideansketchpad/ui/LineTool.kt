@@ -1,6 +1,10 @@
 package euclideansketchpad.ui
 
 import euclideansketchpad.geometry.*
+import euclideansketchpad.geometry.GeometryUtils.ARROWHEAD_SIZE
+import euclideansketchpad.geometry.GeometryUtils.LINE_EXTENT
+import euclideansketchpad.geometry.GeometryUtils.POINT_RADIUS
+import euclideansketchpad.geometry.GeometryUtils.STROKE_WIDTH
 import euclideansketchpad.model.GeometricObjectManager
 import euclideansketchpad.model.ManagerState
 import euclideansketchpad.model.UndoManager
@@ -21,16 +25,11 @@ class LineTool(
     private val undoManager: UndoManager,
     private val previewGroup: Group,
     private val transform: Affine,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    private val viewportProvider: () -> DoubleArray? = { null }
 ) : Tool {
 
     var subMode: LineSubMode = LineSubMode.SEGMENT
-
-    private companion object {
-        const val POINT_RADIUS = 4.0
-        const val STROKE_WIDTH = 2.0
-        const val LINE_EXTENT = 10000.0
-    }
 
     // First point state
     private var firstPointId: Int? = null
@@ -136,22 +135,69 @@ class LineTool(
         val len = hypot(dx, dy)
         if (len == 0.0) return
 
-        val line = when (subMode) {
-            LineSubMode.SEGMENT -> FxLine(x1, y1, x2, y2)
+        // Compute clip rect (viewport with 5% margin) matching GeometryRenderer
+        val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+
+        when (subMode) {
+            LineSubMode.SEGMENT -> {
+                val line = FxLine(x1, y1, x2, y2)
+                line.strokeWidth = STROKE_WIDTH * counterScale
+                line.stroke = Color.BLACK
+                line.opacity = 0.4
+                line.isMouseTransparent = true
+                previewGroup.children.add(line)
+            }
             LineSubMode.RAY -> {
                 val ux = dx / len; val uy = dy / len
-                FxLine(x1, y1, x1 + ux * LINE_EXTENT, y1 + uy * LINE_EXTENT)
+                val ex = x1 + ux * LINE_EXTENT; val ey = y1 + uy * LINE_EXTENT
+                val clipped = clipRect?.let { GeometryUtils.clipLineToRect(x1, y1, ex, ey, it[0], it[1], it[2], it[3]) }
+                if (clipped != null) {
+                    val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                    line.strokeWidth = STROKE_WIDTH * counterScale
+                    line.stroke = Color.BLACK
+                    line.opacity = 0.4
+                    line.isMouseTransparent = true
+                    previewGroup.children.add(line)
+                    val cdx = clipped[2] - clipped[0]; val cdy = clipped[3] - clipped[1]
+                    val clen = hypot(cdx, cdy)
+                    if (clen > 0) drawPreviewArrowhead(clipped[2], clipped[3], cdx / clen, cdy / clen, counterScale)
+                } else {
+                    val line = FxLine(x1, y1, ex, ey)
+                    line.strokeWidth = STROKE_WIDTH * counterScale
+                    line.stroke = Color.BLACK
+                    line.opacity = 0.4
+                    line.isMouseTransparent = true
+                    previewGroup.children.add(line)
+                }
             }
             LineSubMode.LINE -> {
                 val ux = dx / len; val uy = dy / len
-                FxLine(x1 - ux * LINE_EXTENT, y1 - uy * LINE_EXTENT, x1 + ux * LINE_EXTENT, y1 + uy * LINE_EXTENT)
+                val ex1 = x1 - ux * LINE_EXTENT; val ey1 = y1 - uy * LINE_EXTENT
+                val ex2 = x1 + ux * LINE_EXTENT; val ey2 = y1 + uy * LINE_EXTENT
+                val clipped = clipRect?.let { GeometryUtils.clipLineToRect(ex1, ey1, ex2, ey2, it[0], it[1], it[2], it[3]) }
+                if (clipped != null) {
+                    val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                    line.strokeWidth = STROKE_WIDTH * counterScale
+                    line.stroke = Color.BLACK
+                    line.opacity = 0.4
+                    line.isMouseTransparent = true
+                    previewGroup.children.add(line)
+                    val cdx = clipped[2] - clipped[0]; val cdy = clipped[3] - clipped[1]
+                    val clen = hypot(cdx, cdy)
+                    if (clen > 0) {
+                        drawPreviewArrowhead(clipped[2], clipped[3], cdx / clen, cdy / clen, counterScale)
+                        drawPreviewArrowhead(clipped[0], clipped[1], -cdx / clen, -cdy / clen, counterScale)
+                    }
+                } else {
+                    val line = FxLine(ex1, ey1, ex2, ey2)
+                    line.strokeWidth = STROKE_WIDTH * counterScale
+                    line.stroke = Color.BLACK
+                    line.opacity = 0.4
+                    line.isMouseTransparent = true
+                    previewGroup.children.add(line)
+                }
             }
         }
-        line.strokeWidth = STROKE_WIDTH * counterScale
-        line.stroke = Color.BLACK
-        line.opacity = 0.4
-        line.isMouseTransparent = true
-        previewGroup.children.add(line)
 
         // Ghost endpoints
         val ghost1 = FxCircle(x1, y1, POINT_RADIUS * counterScale)
@@ -160,6 +206,17 @@ class LineTool(
         ghost2.fill = Color.BLACK; ghost2.opacity = 0.4; ghost2.isMouseTransparent = true
         previewGroup.children.addAll(ghost1, ghost2)
     }
+
+    private fun drawPreviewArrowhead(tipX: Double, tipY: Double, dirX: Double, dirY: Double, counterScale: Double) {
+        val v = GeometryUtils.computeArrowheadVertices(tipX, tipY, dirX, dirY, ARROWHEAD_SIZE * counterScale)
+        val arrow = javafx.scene.shape.Polygon(v[0], v[1], v[2], v[3], v[4], v[5])
+        arrow.fill = Color.BLACK
+        arrow.stroke = Color.BLACK
+        arrow.opacity = 0.4
+        arrow.isMouseTransparent = true
+        previewGroup.children.add(arrow)
+    }
+
 
     private fun reset() {
         firstPointId = null

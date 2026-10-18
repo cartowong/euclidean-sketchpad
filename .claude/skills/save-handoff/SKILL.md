@@ -12,6 +12,8 @@ Update the handoff document and commit it.
 
 The handoff document is a **concise onboarding brief**, not a changelog. Keep it short so it loads quickly into context. Do NOT duplicate information already in `spec/SPEC.md` — the spec is the authoritative design reference and is already loaded via `CLAUDE.md`. The handoff covers only what the spec doesn't: current build state, implementation-specific architecture decisions, deviations from spec, and known issues.
 
+**No absolute paths.** Every path in the handoff must be relative to the project root. Never write absolute filesystem paths (e.g. `/Users/...` or `/home/...`) — they leak private machine details and break on other machines.
+
 ## Instructions
 
 1. Read `handoff/HANDOFF.md` to understand the current contents.

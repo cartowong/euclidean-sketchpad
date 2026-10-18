@@ -1,8 +1,15 @@
 package euclideansketchpad.export
 
 import euclideansketchpad.geometry.*
+import euclideansketchpad.geometry.GeometryUtils.ANGLE_ARC_RADIUS
+import euclideansketchpad.geometry.GeometryUtils.ARROWHEAD_SIZE
+import euclideansketchpad.geometry.GeometryUtils.FONT_SIZE
+import euclideansketchpad.geometry.GeometryUtils.LINE_EXTENT
+import euclideansketchpad.geometry.GeometryUtils.POINT_RADIUS
+import euclideansketchpad.geometry.GeometryUtils.STROKE_WIDTH
 import euclideansketchpad.model.GeometricObjectManager
 import euclideansketchpad.model.ObjectMetadata
+import euclideansketchpad.model.getObjectAnchor
 import javafx.embed.swing.SwingFXUtils
 import javafx.geometry.Rectangle2D
 import javafx.scene.Group
@@ -37,12 +44,6 @@ data class ExportSettings(
 )
 
 object ExportRenderer {
-
-    private const val POINT_RADIUS = 4.0
-    private const val STROKE_WIDTH = 2.0
-    private const val ARROWHEAD_SIZE = 8.0
-    private const val ANGLE_ARC_RADIUS = 20.0
-    private const val FONT_SIZE = 12.0
 
     fun export(settings: ExportSettings, manager: GeometricObjectManager, file: File) {
         when (settings.format) {
@@ -107,9 +108,11 @@ object ExportRenderer {
         if (maxX - minX < 1e-9) { minX -= 50.0; maxX += 50.0 }
         if (maxY - minY < 1e-9) { minY -= 50.0; maxY += 50.0 }
 
-        // Add 5% margin
-        val marginX = (maxX - minX) * 0.05
-        val marginY = (maxY - minY) * 0.05
+        // Add 10% margin — generous enough that the 5% clip inset used by the
+        // export renderer for arrowhead placement still leaves data points safely
+        // inside the clip rect (5% data-to-clip gap, 5% clip-to-edge gap).
+        val marginX = (maxX - minX) * 0.10
+        val marginY = (maxY - minY) * 0.10
         return doubleArrayOf(minX - marginX, minY - marginY, maxX + marginX, maxY + marginY)
     }
 
@@ -156,15 +159,7 @@ object ExportRenderer {
         val w = settings.outputWidth.toDouble()
         val h = settings.outputHeight.toDouble()
 
-        // Adaptive grid spacing (same logic as CanvasPane)
-        val rawSpacing = 50.0 / scale
-        val magnitude = 10.0.pow(floor(log10(rawSpacing)))
-        val normalized = rawSpacing / magnitude
-        val spacing = when {
-            normalized < 2.0 -> magnitude
-            normalized < 5.0 -> 2.0 * magnitude
-            else -> 5.0 * magnitude
-        }
+        val spacing = GeometryUtils.computeAdaptiveGridSpacing(scale)
 
         val gridColor = Color.gray(0.85)
         val axisColor = Color.gray(0.5)
@@ -197,11 +192,10 @@ object ExportRenderer {
     }
 
     private fun renderObjectsPng(group: Group, manager: GeometricObjectManager, settings: ExportSettings, scale: Double, tx: (Double) -> Double, ty: (Double) -> Double) {
-        val w = settings.outputWidth.toDouble()
-        val h = settings.outputHeight.toDouble()
-        // 5% margin for line/ray clipping so arrowheads don't touch the edge
-        val clipMarginX = w * 0.05
-        val clipMarginY = h * 0.05
+        // Clip lines/rays in math coordinates with 5% inset from the export bounds.
+        val mathClipRect = GeometryUtils.computeClipRect(
+            doubleArrayOf(settings.boundsMinX, settings.boundsMinY, settings.boundsMaxX, settings.boundsMaxY)
+        )
 
         // Pass 1: Regions
         for (obj in manager.allObjects()) {
@@ -231,9 +225,11 @@ object ExportRenderer {
             val cx = tx(obj.vertexX)
             val cy = ty(obj.vertexY)
 
-            // In export pixel coords (y-down), we need to negate angles from math coords (y-up)
-            val startDeg = -obj.startAngleRadians * 180.0 / PI
-            val sweepDeg = obj.sweepAngleRadians * 180.0 / PI
+            // Export has no y-flip transform (ty() handles flipping positions), so
+            // JavaFX Arc angles map directly to math angles. Negate sweep because
+            // JavaFX Arc sweeps CCW for positive values but our sweep is CW in math.
+            val startDeg = obj.startAngleRadians * 180.0 / PI
+            val sweepDeg = -obj.sweepAngleRadians * 180.0 / PI
 
             val arc = Arc(cx, cy, arcRadius, arcRadius, startDeg, sweepDeg)
             arc.type = ArcType.ROUND
@@ -255,7 +251,6 @@ object ExportRenderer {
                 if (len == 0.0) continue
                 val ux = dx / len
                 val uy = dy / len
-                val extent = 100000.0
 
                 when (obj.linearType) {
                     LinearType.SEGMENT -> {
@@ -265,39 +260,39 @@ object ExportRenderer {
                         group.children.add(line)
                     }
                     LinearType.LINE -> {
-                        val ex1 = obj.x1 - ux * extent
-                        val ey1 = obj.y1 - uy * extent
-                        val ex2 = obj.x1 + ux * extent
-                        val ey2 = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(ex1), ty(ey1), tx(ex2), ty(ey2), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val ex1 = obj.x1 - ux * LINE_EXTENT
+                        val ey1 = obj.y1 - uy * LINE_EXTENT
+                        val ex2 = obj.x1 + ux * LINE_EXTENT
+                        val ey2 = obj.y1 + uy * LINE_EXTENT
+                        val clipped = GeometryUtils.clipLineToRect(ex1, ey1, ex2, ey2, mathClipRect[0], mathClipRect[1], mathClipRect[2], mathClipRect[3])
                         if (clipped != null) {
-                            val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                            val line = FxLine(tx(clipped[0]), ty(clipped[1]), tx(clipped[2]), ty(clipped[3]))
                             line.strokeWidth = STROKE_WIDTH
                             line.stroke = Color.BLACK
                             group.children.add(line)
-                            val adx = clipped[2] - clipped[0]
-                            val ady = clipped[3] - clipped[1]
+                            val adx = tx(clipped[2]) - tx(clipped[0])
+                            val ady = ty(clipped[3]) - ty(clipped[1])
                             val alen = hypot(adx, ady)
                             if (alen > 0) {
-                                addArrowheadPng(group, clipped[2], clipped[3], adx / alen, ady / alen)
-                                addArrowheadPng(group, clipped[0], clipped[1], -adx / alen, -ady / alen)
+                                addArrowheadPng(group, tx(clipped[2]), ty(clipped[3]), adx / alen, ady / alen)
+                                addArrowheadPng(group, tx(clipped[0]), ty(clipped[1]), -adx / alen, -ady / alen)
                             }
                         }
                     }
                     LinearType.RAY -> {
-                        val ex = obj.x1 + ux * extent
-                        val ey = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(obj.x1), ty(obj.y1), tx(ex), ty(ey), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val ex = obj.x1 + ux * LINE_EXTENT
+                        val ey = obj.y1 + uy * LINE_EXTENT
+                        val clipped = GeometryUtils.clipLineToRect(obj.x1, obj.y1, ex, ey, mathClipRect[0], mathClipRect[1], mathClipRect[2], mathClipRect[3])
                         if (clipped != null) {
-                            val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                            val line = FxLine(tx(clipped[0]), ty(clipped[1]), tx(clipped[2]), ty(clipped[3]))
                             line.strokeWidth = STROKE_WIDTH
                             line.stroke = Color.BLACK
                             group.children.add(line)
-                            val adx = clipped[2] - clipped[0]
-                            val ady = clipped[3] - clipped[1]
+                            val adx = tx(clipped[2]) - tx(clipped[0])
+                            val ady = ty(clipped[3]) - ty(clipped[1])
                             val alen = hypot(adx, ady)
                             if (alen > 0) {
-                                addArrowheadPng(group, clipped[2], clipped[3], adx / alen, ady / alen)
+                                addArrowheadPng(group, tx(clipped[2]), ty(clipped[3]), adx / alen, ady / alen)
                             }
                         }
                     }
@@ -338,16 +333,8 @@ object ExportRenderer {
     }
 
     private fun addArrowheadPng(group: Group, tipX: Double, tipY: Double, dirX: Double, dirY: Double) {
-        val size = ARROWHEAD_SIZE
-        val perpX = -dirY
-        val perpY = dirX
-        val baseX = tipX - dirX * size
-        val baseY = tipY - dirY * size
-        val p1x = baseX + perpX * size * 0.4
-        val p1y = baseY + perpY * size * 0.4
-        val p2x = baseX - perpX * size * 0.4
-        val p2y = baseY - perpY * size * 0.4
-        val arrow = FxPolygon(tipX, tipY, p1x, p1y, p2x, p2y)
+        val v = GeometryUtils.computeArrowheadVertices(tipX, tipY, dirX, dirY, ARROWHEAD_SIZE)
+        val arrow = FxPolygon(v[0], v[1], v[2], v[3], v[4], v[5])
         arrow.fill = Color.BLACK
         arrow.stroke = Color.BLACK
         group.children.add(arrow)
@@ -392,14 +379,7 @@ object ExportRenderer {
         val w = settings.outputWidth.toDouble()
         val h = settings.outputHeight.toDouble()
 
-        val rawSpacing = 50.0 / scale
-        val magnitude = 10.0.pow(floor(log10(rawSpacing)))
-        val normalized = rawSpacing / magnitude
-        val spacing = when {
-            normalized < 2.0 -> magnitude
-            normalized < 5.0 -> 2.0 * magnitude
-            else -> 5.0 * magnitude
-        }
+        val spacing = GeometryUtils.computeAdaptiveGridSpacing(scale)
 
         // Vertical lines
         var x = floor(bMinX / spacing) * spacing
@@ -429,11 +409,10 @@ object ExportRenderer {
     }
 
     private fun renderObjectsSvg(sb: StringBuilder, manager: GeometricObjectManager, settings: ExportSettings, scale: Double, tx: (Double) -> Double, ty: (Double) -> Double) {
-        val w = settings.outputWidth.toDouble()
-        val h = settings.outputHeight.toDouble()
-        // 5% margin for line/ray clipping so arrowheads don't touch the edge
-        val clipMarginX = w * 0.05
-        val clipMarginY = h * 0.05
+        // Clip lines/rays in math coordinates with 5% inset from the export bounds.
+        val mathClipRect = GeometryUtils.computeClipRect(
+            doubleArrayOf(settings.boundsMinX, settings.boundsMinY, settings.boundsMaxX, settings.boundsMaxY)
+        )
 
         // Pass 1: Regions
         for (obj in manager.allObjects()) {
@@ -458,9 +437,10 @@ object ExportRenderer {
             val cy = ty(obj.vertexY)
             val r = ANGLE_ARC_RADIUS
 
-            // Start and end angles in pixel space (y-down = negate from math y-up)
-            val startAngle = -obj.startAngleRadians
-            val endAngle = startAngle - obj.sweepAngleRadians // CW in math → more negative in pixel
+            // SVG y-axis is down, but ty() already flips positions. Angles stay in
+            // math convention; sweep adds (CW in math maps to CW in SVG y-down).
+            val startAngle = obj.startAngleRadians
+            val endAngle = startAngle + obj.sweepAngleRadians
 
             val x1 = cx + r * cos(startAngle)
             val y1 = cy + r * sin(startAngle)
@@ -486,40 +466,39 @@ object ExportRenderer {
                 if (len == 0.0) continue
                 val ux = dx / len
                 val uy = dy / len
-                val extent = 100000.0
 
                 when (obj.linearType) {
                     LinearType.SEGMENT -> {
                         sb.appendLine("""  <line x1="${fmt(tx(obj.x1))}" y1="${fmt(ty(obj.y1))}" x2="${fmt(tx(obj.x2))}" y2="${fmt(ty(obj.y2))}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
                     }
                     LinearType.LINE -> {
-                        val ex1 = obj.x1 - ux * extent
-                        val ey1 = obj.y1 - uy * extent
-                        val ex2 = obj.x1 + ux * extent
-                        val ey2 = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(ex1), ty(ey1), tx(ex2), ty(ey2), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val ex1 = obj.x1 - ux * LINE_EXTENT
+                        val ey1 = obj.y1 - uy * LINE_EXTENT
+                        val ex2 = obj.x1 + ux * LINE_EXTENT
+                        val ey2 = obj.y1 + uy * LINE_EXTENT
+                        val clipped = GeometryUtils.clipLineToRect(ex1, ey1, ex2, ey2, mathClipRect[0], mathClipRect[1], mathClipRect[2], mathClipRect[3])
                         if (clipped != null) {
-                            sb.appendLine("""  <line x1="${fmt(clipped[0])}" y1="${fmt(clipped[1])}" x2="${fmt(clipped[2])}" y2="${fmt(clipped[3])}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
-                            val adx = clipped[2] - clipped[0]
-                            val ady = clipped[3] - clipped[1]
+                            sb.appendLine("""  <line x1="${fmt(tx(clipped[0]))}" y1="${fmt(ty(clipped[1]))}" x2="${fmt(tx(clipped[2]))}" y2="${fmt(ty(clipped[3]))}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+                            val adx = tx(clipped[2]) - tx(clipped[0])
+                            val ady = ty(clipped[3]) - ty(clipped[1])
                             val alen = hypot(adx, ady)
                             if (alen > 0) {
-                                addArrowheadSvg(sb, clipped[2], clipped[3], adx / alen, ady / alen)
-                                addArrowheadSvg(sb, clipped[0], clipped[1], -adx / alen, -ady / alen)
+                                addArrowheadSvg(sb, tx(clipped[2]), ty(clipped[3]), adx / alen, ady / alen)
+                                addArrowheadSvg(sb, tx(clipped[0]), ty(clipped[1]), -adx / alen, -ady / alen)
                             }
                         }
                     }
                     LinearType.RAY -> {
-                        val ex = obj.x1 + ux * extent
-                        val ey = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(obj.x1), ty(obj.y1), tx(ex), ty(ey), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val ex = obj.x1 + ux * LINE_EXTENT
+                        val ey = obj.y1 + uy * LINE_EXTENT
+                        val clipped = GeometryUtils.clipLineToRect(obj.x1, obj.y1, ex, ey, mathClipRect[0], mathClipRect[1], mathClipRect[2], mathClipRect[3])
                         if (clipped != null) {
-                            sb.appendLine("""  <line x1="${fmt(clipped[0])}" y1="${fmt(clipped[1])}" x2="${fmt(clipped[2])}" y2="${fmt(clipped[3])}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
-                            val adx = clipped[2] - clipped[0]
-                            val ady = clipped[3] - clipped[1]
+                            sb.appendLine("""  <line x1="${fmt(tx(clipped[0]))}" y1="${fmt(ty(clipped[1]))}" x2="${fmt(tx(clipped[2]))}" y2="${fmt(ty(clipped[3]))}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+                            val adx = tx(clipped[2]) - tx(clipped[0])
+                            val ady = ty(clipped[3]) - ty(clipped[1])
                             val alen = hypot(adx, ady)
                             if (alen > 0) {
-                                addArrowheadSvg(sb, clipped[2], clipped[3], adx / alen, ady / alen)
+                                addArrowheadSvg(sb, tx(clipped[2]), ty(clipped[3]), adx / alen, ady / alen)
                             }
                         }
                     }
@@ -553,79 +532,14 @@ object ExportRenderer {
     }
 
     private fun addArrowheadSvg(sb: StringBuilder, tipX: Double, tipY: Double, dirX: Double, dirY: Double) {
-        val size = ARROWHEAD_SIZE
-        val perpX = -dirY
-        val perpY = dirX
-        val baseX = tipX - dirX * size
-        val baseY = tipY - dirY * size
-        val p1x = baseX + perpX * size * 0.4
-        val p1y = baseY + perpY * size * 0.4
-        val p2x = baseX - perpX * size * 0.4
-        val p2y = baseY - perpY * size * 0.4
-        sb.appendLine("""  <polygon points="${fmt(tipX)},${fmt(tipY)} ${fmt(p1x)},${fmt(p1y)} ${fmt(p2x)},${fmt(p2y)}" fill="black"/>""")
+        val v = GeometryUtils.computeArrowheadVertices(tipX, tipY, dirX, dirY, ARROWHEAD_SIZE)
+        sb.appendLine("""  <polygon points="${fmt(v[0])},${fmt(v[1])} ${fmt(v[2])},${fmt(v[3])} ${fmt(v[4])},${fmt(v[5])}" fill="black"/>""")
     }
 
     // --- Shared helpers ---
 
     private fun isExportable(meta: ObjectMetadata): Boolean =
         meta.visible && !meta.isLocked
-
-    private fun getObjectAnchor(obj: GeometricObject, meta: ObjectMetadata): Pair<Double, Double>? {
-        if (obj is PointLike) return Pair(obj.x, obj.y)
-        if (obj is LinearLike) {
-            val t = meta.labelAnchorT ?: if (obj.linearType == LinearType.RAY) 0.0 else 0.5
-            return Pair(obj.x1 + t * (obj.x2 - obj.x1), obj.y1 + t * (obj.y2 - obj.y1))
-        }
-        return when (obj) {
-            is Circle -> {
-                val angle = meta.labelAnchorAngle ?: (PI / 2)
-                Pair(obj.cx + obj.radius * cos(angle), obj.cy + obj.radius * sin(angle))
-            }
-            is Angle -> Pair(obj.vertexX, obj.vertexY)
-            is Region -> {
-                if (obj.vertices.isNotEmpty()) {
-                    val cx = obj.vertices.sumOf { it.first } / obj.vertices.size
-                    val cy = obj.vertices.sumOf { it.second } / obj.vertices.size
-                    Pair(cx, cy)
-                } else null
-            }
-            else -> null
-        }
-    }
-
-    /** Liang-Barsky line clipping. Returns [x1, y1, x2, y2] or null if fully outside. */
-    private fun clipLineToRect(
-        x1: Double, y1: Double, x2: Double, y2: Double,
-        xmin: Double, ymin: Double, xmax: Double, ymax: Double
-    ): DoubleArray? {
-        val dx = x2 - x1
-        val dy = y2 - y1
-        val p = doubleArrayOf(-dx, dx, -dy, dy)
-        val q = doubleArrayOf(x1 - xmin, xmax - x1, y1 - ymin, ymax - y1)
-
-        var t0 = 0.0
-        var t1 = 1.0
-
-        for (i in 0..3) {
-            if (p[i] == 0.0) {
-                if (q[i] < 0.0) return null
-            } else {
-                val t = q[i] / p[i]
-                if (p[i] < 0.0) {
-                    if (t > t1) return null
-                    if (t > t0) t0 = t
-                } else {
-                    if (t < t0) return null
-                    if (t < t1) t1 = t
-                }
-            }
-        }
-
-        return doubleArrayOf(
-            x1 + t0 * dx, y1 + t0 * dy,
-            x1 + t1 * dx, y1 + t1 * dy
-        )
-    }
 
     private fun fmt(v: Double): String = "%.2f".format(v)
 }

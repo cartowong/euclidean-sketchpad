@@ -104,7 +104,7 @@ class SketchpadApp : Application() {
         // Create tools
         selectionTool = SelectionTool(manager, hitTester, undoManager, requestRender)
         val pointTool = PointTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
-        val lineTool = LineTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
+        val lineTool = LineTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender) { canvasPane.getViewportMathBounds() }
         val circleTool = CircleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
         val angleTool = AngleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
         val regionTool = RegionTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)

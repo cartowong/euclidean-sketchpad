@@ -310,9 +310,10 @@ The renderer makes 5 passes in order (back to front):
 
 ### 5.4 Arrow Rendering
 
-- **Lines** (and ParallelLine, PerpendicularLine): extended to `±10000` world units from the defining points. Arrowheads at both ends.
-- **Rays**: extended to `+10000` world units from the endpoint. Arrowhead at the extending end only.
-- **Segments**: no arrowheads.
+- **Lines** (and ParallelLine, PerpendicularLine): clipped to the visible viewport boundary with a 5% margin inset using **Liang-Barsky** line clipping. Arrowheads at both clipped endpoints. The line stroke ends at the arrowhead tip.
+- **Rays**: clipped the same way. Arrowhead at the extending (far) end only. The origin end is drawn without an arrowhead.
+- **Segments**: no arrowheads, no clipping.
+- **Tool previews**: ghost lines and rays during multi-click construction use the same clipping and arrowhead placement.
 
 ### 5.5 CSS Stylesheet
 
@@ -621,7 +622,7 @@ Exports at the canvas's current screen size. Width/height fields are non-editabl
   - All visible points.
   - Parent points of all visible linears and regions (regardless of parent visibility).
   - Extremal points of visible circles (top, bottom, left, right of each circle).
-  - 5% margin on all sides.
+  - 10% margin on all sides (accommodates the 5% clip inset used during export rendering, leaving ~5% visible margin between arrowheads and image edge).
   - Degenerate fallback: if bounding box is empty, uses `[-100, -100, 100, 100]`. If width or height is near zero, pads by 50 units.
 
 ### 12.5 Export Rendering
