@@ -1,14 +1,14 @@
 # Euclidean Sketchpad — Handoff Document
 
 **Date:** 2026-10-18
-**Branch:** `feat/1-arrowheads-at-canvas-edge` (main branch is `main`)
+**Branch:** `main`
 
 ## Current State
 
 - **Build:** `./gradlew clean test` passes (124 tests). Clean build.
 - **Git:** `.claude/` is gitignored.
 - **Runtime:** `./gradlew run` launches the full app.
-- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.1.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
+- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.1.1.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
 - **Spec alignment:** All features described in `spec/SPEC.md` are implemented, including the `LinearLike` interface, 4 built-in constructions, specific type display names, and "Custom Constructions" table rename.
 
 ## Architecture Notes
@@ -29,3 +29,4 @@
 - **Rendering constants and utilities are centralized in `GeometryUtils`.** `POINT_RADIUS`, `STROKE_WIDTH`, `LINE_EXTENT`, `ARROWHEAD_SIZE`, `ANGLE_ARC_RADIUS`, `FONT_SIZE` are defined once there and imported by `GeometryRenderer`, `LineTool`, and `ExportRenderer`. Shared functions include `clipLineToRect` (Liang-Barsky), `computeClipRect`, `computeArrowheadVertices`, and `computeAdaptiveGridSpacing`. `getObjectAnchor()` is a top-level function in `model/ObjectMetadata.kt`.
 - **Arrowhead clipping uses Liang-Barsky on the viewport.** `GeometryRenderer.renderAll()` and `renderPreviewObjects()` receive `viewportBounds` from `CanvasPane.getViewportMathBounds()`, compute a clip rect inset by 5% via `GeometryUtils.computeClipRect()`, and clip lines/rays to it. Both the `FxLine` stroke and arrowheads terminate at the same clip boundary. `LineTool` receives a `viewportProvider` lambda and applies identical clipping to tool preview (ghost) lines/rays.
 - **Export arrowhead clipping uses the same 5% inset.** `ExportRenderer` clips lines/rays in math coordinates against a 5% inset of the export bounds, then transforms to pixel coordinates. For auto-fit exports, `computeAutoFitBounds()` uses a 10% margin (not 5%) so that data-edge points remain inside the clip rect after the 5% inset is applied.
+- **Export label offsets negate `labelOffsetY`.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction. The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY` to produce the same visual result.

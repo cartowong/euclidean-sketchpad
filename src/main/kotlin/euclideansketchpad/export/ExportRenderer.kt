@@ -326,7 +326,7 @@ object ExportRenderer {
             val text = Text(meta.label)
             text.font = Font.font(FONT_SIZE)
             text.x = tx(anchor.first) + meta.labelOffsetX
-            text.y = ty(anchor.second) + meta.labelOffsetY
+            text.y = ty(anchor.second) - meta.labelOffsetY
             text.fill = Color.BLACK
             group.children.add(text)
         }
@@ -525,7 +525,7 @@ object ExportRenderer {
 
             val anchor = getObjectAnchor(obj, meta) ?: continue
             val lx = tx(anchor.first) + meta.labelOffsetX
-            val ly = ty(anchor.second) + meta.labelOffsetY
+            val ly = ty(anchor.second) - meta.labelOffsetY
             val escaped = meta.label!!.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             sb.appendLine("""  <text x="${fmt(lx)}" y="${fmt(ly)}" font-size="$FONT_SIZE" fill="black">$escaped</text>""")
         }

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-18
+
+### Fixed
+
+- Label positions in exported images (PNG and SVG) now match the canvas — previously labels were vertically mirrored due to incorrect `labelOffsetY` sign in the export coordinate transform
+
 ## [1.1.0] - 2026-10-18
 
 ### Added
