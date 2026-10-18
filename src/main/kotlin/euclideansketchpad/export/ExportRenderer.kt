@@ -269,7 +269,7 @@ object ExportRenderer {
                         val ey1 = obj.y1 - uy * extent
                         val ex2 = obj.x1 + ux * extent
                         val ey2 = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(ex1), ty(ey1), tx(ex2), ty(ey2), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val clipped = GeometryUtils.clipLineToRect(tx(ex1), ty(ey1), tx(ex2), ty(ey2), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
                         if (clipped != null) {
                             val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
                             line.strokeWidth = STROKE_WIDTH
@@ -287,7 +287,7 @@ object ExportRenderer {
                     LinearType.RAY -> {
                         val ex = obj.x1 + ux * extent
                         val ey = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(obj.x1), ty(obj.y1), tx(ex), ty(ey), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val clipped = GeometryUtils.clipLineToRect(tx(obj.x1), ty(obj.y1), tx(ex), ty(ey), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
                         if (clipped != null) {
                             val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
                             line.strokeWidth = STROKE_WIDTH
@@ -497,7 +497,7 @@ object ExportRenderer {
                         val ey1 = obj.y1 - uy * extent
                         val ex2 = obj.x1 + ux * extent
                         val ey2 = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(ex1), ty(ey1), tx(ex2), ty(ey2), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val clipped = GeometryUtils.clipLineToRect(tx(ex1), ty(ey1), tx(ex2), ty(ey2), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
                         if (clipped != null) {
                             sb.appendLine("""  <line x1="${fmt(clipped[0])}" y1="${fmt(clipped[1])}" x2="${fmt(clipped[2])}" y2="${fmt(clipped[3])}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
                             val adx = clipped[2] - clipped[0]
@@ -512,7 +512,7 @@ object ExportRenderer {
                     LinearType.RAY -> {
                         val ex = obj.x1 + ux * extent
                         val ey = obj.y1 + uy * extent
-                        val clipped = clipLineToRect(tx(obj.x1), ty(obj.y1), tx(ex), ty(ey), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
+                        val clipped = GeometryUtils.clipLineToRect(tx(obj.x1), ty(obj.y1), tx(ex), ty(ey), clipMarginX, clipMarginY, w - clipMarginX, h - clipMarginY)
                         if (clipped != null) {
                             sb.appendLine("""  <line x1="${fmt(clipped[0])}" y1="${fmt(clipped[1])}" x2="${fmt(clipped[2])}" y2="${fmt(clipped[3])}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
                             val adx = clipped[2] - clipped[0]
@@ -591,40 +591,6 @@ object ExportRenderer {
             }
             else -> null
         }
-    }
-
-    /** Liang-Barsky line clipping. Returns [x1, y1, x2, y2] or null if fully outside. */
-    private fun clipLineToRect(
-        x1: Double, y1: Double, x2: Double, y2: Double,
-        xmin: Double, ymin: Double, xmax: Double, ymax: Double
-    ): DoubleArray? {
-        val dx = x2 - x1
-        val dy = y2 - y1
-        val p = doubleArrayOf(-dx, dx, -dy, dy)
-        val q = doubleArrayOf(x1 - xmin, xmax - x1, y1 - ymin, ymax - y1)
-
-        var t0 = 0.0
-        var t1 = 1.0
-
-        for (i in 0..3) {
-            if (p[i] == 0.0) {
-                if (q[i] < 0.0) return null
-            } else {
-                val t = q[i] / p[i]
-                if (p[i] < 0.0) {
-                    if (t > t1) return null
-                    if (t > t0) t0 = t
-                } else {
-                    if (t < t0) return null
-                    if (t < t1) t1 = t
-                }
-            }
-        }
-
-        return doubleArrayOf(
-            x1 + t0 * dx, y1 + t0 * dy,
-            x1 + t1 * dx, y1 + t1 * dy
-        )
     }
 
     private fun fmt(v: Double): String = "%.2f".format(v)

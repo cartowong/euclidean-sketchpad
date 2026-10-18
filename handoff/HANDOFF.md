@@ -1,15 +1,15 @@
 # Euclidean Sketchpad — Handoff Document
 
-**Date:** 2026-10-17
-**Workspace:** `/Users/carto/Workspace/MathVisuals/EuclideanSketchpad`
-**Branch:** `master` (main branch is `main`)
+**Date:** 2026-10-18
+**Workspace:** `/Users/carto/Workspace/GitRepositories/EuclideanSketchpad`
+**Branch:** `feat/1-arrowheads-at-canvas-edge` (main branch is `main`)
 
 ## Current State
 
 - **Build:** `./gradlew clean test` passes (124 tests). Clean build.
 - **Git:** `master` branch. `.claude/` is gitignored.
 - **Runtime:** `./gradlew run` launches the full app.
-- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.0.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
+- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.1.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
 - **Spec alignment:** All features described in `spec/SPEC.md` are implemented, including the `LinearLike` interface, 4 built-in constructions, specific type display names, and "Custom Constructions" table rename.
 
 ## Architecture Notes
@@ -26,4 +26,5 @@
 - **Label hit-box accounts for scaleY=-1 visual shift.** The renderer uses `text.scaleY = -1.0` to un-mirror labels in the y-flipped world group. JavaFX pivots this around the layout-bounds center, shifting the visual text ~7px below the computed baseline. `LabelTool.hitTestLabel()` extends its hit box downward (`labelY - 10` to `labelY + 18`) to match the actual visual position.
 - **`APP_VERSION` is the single source of truth for the version string.** Defined as a top-level `const val` in `Main.kt`. Referenced by `DiagramSerializer`, `ConstructionSerializer`, and the About dialog.
 - **Diagram open validates before resetting.** `SketchpadApp` parses and validates the file's version before calling `resetDiagram()`, so a version mismatch doesn't destroy the user's current work. The entire open operation is wrapped in a try-catch that shows an error alert.
-- **jpackage uses `org.beryx.runtime` plugin with hardcoded modules.** The plugin's auto-detection (`suggestModules`) crashes on deeply-nested Kotlin anonymous classes. Modules are explicitly set to `java.base`, `java.desktop`, `java.logging`, `jdk.unsupported`. The jpackage `appVersion` is set to `1.0.0` (macOS jpackage rejects versions starting with `0`); this now matches `APP_VERSION` in `Main.kt`. The `.icns` icon at `packaging/macos/EuclideanSketchpad.icns` was generated from `app-icon.png` via `sips` + `iconutil`.
+- **jpackage uses `org.beryx.runtime` plugin with hardcoded modules.** The plugin's auto-detection (`suggestModules`) crashes on deeply-nested Kotlin anonymous classes. Modules are explicitly set to `java.base`, `java.desktop`, `java.logging`, `jdk.unsupported`. The jpackage `appVersion` is set to `1.1.0` (macOS jpackage rejects versions starting with `0`); this now matches `APP_VERSION` in `Main.kt`. The `.icns` icon at `packaging/macos/EuclideanSketchpad.icns` was generated from `app-icon.png` via `sips` + `iconutil`.
+- **Arrowhead clipping uses Liang-Barsky on the viewport.** `GeometryRenderer.renderAll()` and `renderPreviewObjects()` receive `viewportBounds` from `CanvasPane.getViewportMathBounds()`, compute a clip rect inset by 5%, and clip lines/rays to it. Both the `FxLine` stroke and arrowheads terminate at the same clip boundary. `LineTool` receives a `viewportProvider` lambda and applies identical clipping to tool preview (ghost) lines/rays. `GeometryUtils.clipLineToRect()` is the single shared Liang-Barsky implementation used by `GeometryRenderer`, `LineTool`, and `ExportRenderer`.

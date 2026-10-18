@@ -39,11 +39,21 @@ object GeometryRenderer {
         group: Group,
         transform: Affine,
         selectedIds: Set<Int> = emptySet(),
-        hoveredId: Int? = null
+        hoveredId: Int? = null,
+        viewportBounds: DoubleArray? = null
     ) {
         group.children.clear()
         val scale = transform.mxx
         val counterScale = if (scale != 0.0) 1.0 / scale else 1.0
+
+        // Clip rect for line endpoints and arrowheads (viewport with 5% margin inset)
+        val clipRect = viewportBounds?.let { vb ->
+            val w = vb[2] - vb[0]
+            val h = vb[3] - vb[1]
+            val mx = w * 0.05
+            val my = h * 0.05
+            doubleArrayOf(vb[0] + mx, vb[1] + my, vb[2] - mx, vb[3] - my)
+        }
 
         // Pass 1: Regions (bottom)
         for (obj in manager.allObjects()) {
@@ -131,24 +141,62 @@ object GeometryRenderer {
                         group.children.add(line)
                     }
                     LinearType.LINE -> {
-                        val line = FxLine(
-                            obj.x1 - ux * LINE_EXTENT, obj.y1 - uy * LINE_EXTENT,
-                            obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT
-                        )
-                        line.strokeWidth = strokeWidth
-                        line.stroke = color
-                        line.styleClass.add("line")
-                        group.children.add(line)
-                        drawArrowhead(group, obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT, ux, uy, counterScale, color)
-                        drawArrowhead(group, obj.x1 - ux * LINE_EXTENT, obj.y1 - uy * LINE_EXTENT, -ux, -uy, counterScale, color)
+                        val ex1 = obj.x1 - ux * LINE_EXTENT
+                        val ey1 = obj.y1 - uy * LINE_EXTENT
+                        val ex2 = obj.x1 + ux * LINE_EXTENT
+                        val ey2 = obj.y1 + uy * LINE_EXTENT
+                        val clipped = clipRect?.let { GeometryUtils.clipLineToRect(ex1, ey1, ex2, ey2, it[0], it[1], it[2], it[3]) }
+                        if (clipped != null) {
+                            val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.styleClass.add("line")
+                            group.children.add(line)
+                            val cdx = clipped[2] - clipped[0]
+                            val cdy = clipped[3] - clipped[1]
+                            val clen = kotlin.math.hypot(cdx, cdy)
+                            if (clen > 0) {
+                                drawArrowhead(group, clipped[2], clipped[3], cdx / clen, cdy / clen, counterScale, color)
+                                drawArrowhead(group, clipped[0], clipped[1], -cdx / clen, -cdy / clen, counterScale, color)
+                            }
+                        } else {
+                            val line = FxLine(ex1, ey1, ex2, ey2)
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.styleClass.add("line")
+                            group.children.add(line)
+                            if (clipRect == null) {
+                                drawArrowhead(group, ex2, ey2, ux, uy, counterScale, color)
+                                drawArrowhead(group, ex1, ey1, -ux, -uy, counterScale, color)
+                            }
+                        }
                     }
                     LinearType.RAY -> {
-                        val line = FxLine(obj.x1, obj.y1, obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT)
-                        line.strokeWidth = strokeWidth
-                        line.stroke = color
-                        line.styleClass.add("ray")
-                        group.children.add(line)
-                        drawArrowhead(group, obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT, ux, uy, counterScale, color)
+                        val ex = obj.x1 + ux * LINE_EXTENT
+                        val ey = obj.y1 + uy * LINE_EXTENT
+                        val clipped = clipRect?.let { GeometryUtils.clipLineToRect(obj.x1, obj.y1, ex, ey, it[0], it[1], it[2], it[3]) }
+                        if (clipped != null) {
+                            val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.styleClass.add("ray")
+                            group.children.add(line)
+                            val cdx = clipped[2] - clipped[0]
+                            val cdy = clipped[3] - clipped[1]
+                            val clen = kotlin.math.hypot(cdx, cdy)
+                            if (clen > 0) {
+                                drawArrowhead(group, clipped[2], clipped[3], cdx / clen, cdy / clen, counterScale, color)
+                            }
+                        } else {
+                            val line = FxLine(obj.x1, obj.y1, ex, ey)
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.styleClass.add("ray")
+                            group.children.add(line)
+                            if (clipRect == null) {
+                                drawArrowhead(group, ex, ey, ux, uy, counterScale, color)
+                            }
+                        }
                     }
                 }
             } else if (obj is Circle) {
@@ -202,12 +250,21 @@ object GeometryRenderer {
     fun renderPreviewObjects(
         objects: List<GeometricObject>,
         group: Group,
-        transform: Affine
+        transform: Affine,
+        viewportBounds: DoubleArray? = null
     ) {
         val scale = transform.mxx
         val counterScale = if (scale != 0.0) 1.0 / scale else 1.0
         val strokeWidth = STROKE_WIDTH * counterScale
         val color = PREVIEW_COLOR
+
+        val clipRect = viewportBounds?.let { vb ->
+            val w = vb[2] - vb[0]
+            val h = vb[3] - vb[1]
+            val mx = w * 0.05
+            val my = h * 0.05
+            doubleArrayOf(vb[0] + mx, vb[1] + my, vb[2] - mx, vb[3] - my)
+        }
 
         // Pass 1: Regions (bottom)
         for (obj in objects) {
@@ -264,26 +321,66 @@ object GeometryRenderer {
                         group.children.add(line)
                     }
                     LinearType.LINE -> {
-                        val line = FxLine(
-                            obj.x1 - ux * LINE_EXTENT, obj.y1 - uy * LINE_EXTENT,
-                            obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT
-                        )
-                        line.strokeWidth = strokeWidth
-                        line.stroke = color
-                        line.opacity = PREVIEW_OPACITY
-                        line.isMouseTransparent = true
-                        group.children.add(line)
-                        drawArrowhead(group, obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT, ux, uy, counterScale, color, PREVIEW_OPACITY)
-                        drawArrowhead(group, obj.x1 - ux * LINE_EXTENT, obj.y1 - uy * LINE_EXTENT, -ux, -uy, counterScale, color, PREVIEW_OPACITY)
+                        val ex1 = obj.x1 - ux * LINE_EXTENT
+                        val ey1 = obj.y1 - uy * LINE_EXTENT
+                        val ex2 = obj.x1 + ux * LINE_EXTENT
+                        val ey2 = obj.y1 + uy * LINE_EXTENT
+                        val clipped = clipRect?.let { GeometryUtils.clipLineToRect(ex1, ey1, ex2, ey2, it[0], it[1], it[2], it[3]) }
+                        if (clipped != null) {
+                            val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.opacity = PREVIEW_OPACITY
+                            line.isMouseTransparent = true
+                            group.children.add(line)
+                            val cdx = clipped[2] - clipped[0]
+                            val cdy = clipped[3] - clipped[1]
+                            val clen = kotlin.math.hypot(cdx, cdy)
+                            if (clen > 0) {
+                                drawArrowhead(group, clipped[2], clipped[3], cdx / clen, cdy / clen, counterScale, color, PREVIEW_OPACITY)
+                                drawArrowhead(group, clipped[0], clipped[1], -cdx / clen, -cdy / clen, counterScale, color, PREVIEW_OPACITY)
+                            }
+                        } else {
+                            val line = FxLine(ex1, ey1, ex2, ey2)
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.opacity = PREVIEW_OPACITY
+                            line.isMouseTransparent = true
+                            group.children.add(line)
+                            if (clipRect == null) {
+                                drawArrowhead(group, ex2, ey2, ux, uy, counterScale, color, PREVIEW_OPACITY)
+                                drawArrowhead(group, ex1, ey1, -ux, -uy, counterScale, color, PREVIEW_OPACITY)
+                            }
+                        }
                     }
                     LinearType.RAY -> {
-                        val line = FxLine(obj.x1, obj.y1, obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT)
-                        line.strokeWidth = strokeWidth
-                        line.stroke = color
-                        line.opacity = PREVIEW_OPACITY
-                        line.isMouseTransparent = true
-                        group.children.add(line)
-                        drawArrowhead(group, obj.x1 + ux * LINE_EXTENT, obj.y1 + uy * LINE_EXTENT, ux, uy, counterScale, color, PREVIEW_OPACITY)
+                        val ex = obj.x1 + ux * LINE_EXTENT
+                        val ey = obj.y1 + uy * LINE_EXTENT
+                        val clipped = clipRect?.let { GeometryUtils.clipLineToRect(obj.x1, obj.y1, ex, ey, it[0], it[1], it[2], it[3]) }
+                        if (clipped != null) {
+                            val line = FxLine(clipped[0], clipped[1], clipped[2], clipped[3])
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.opacity = PREVIEW_OPACITY
+                            line.isMouseTransparent = true
+                            group.children.add(line)
+                            val cdx = clipped[2] - clipped[0]
+                            val cdy = clipped[3] - clipped[1]
+                            val clen = kotlin.math.hypot(cdx, cdy)
+                            if (clen > 0) {
+                                drawArrowhead(group, clipped[2], clipped[3], cdx / clen, cdy / clen, counterScale, color, PREVIEW_OPACITY)
+                            }
+                        } else {
+                            val line = FxLine(obj.x1, obj.y1, ex, ey)
+                            line.strokeWidth = strokeWidth
+                            line.stroke = color
+                            line.opacity = PREVIEW_OPACITY
+                            line.isMouseTransparent = true
+                            group.children.add(line)
+                            if (clipRect == null) {
+                                drawArrowhead(group, ex, ey, ux, uy, counterScale, color, PREVIEW_OPACITY)
+                            }
+                        }
                     }
                 }
             } else if (obj is Circle) {

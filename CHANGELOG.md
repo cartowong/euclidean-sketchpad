@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-18
+
+### Added
+
+- Arrowheads rendered at the visible canvas edge for lines and rays, clipped to the viewport boundary with a 5% margin inset using Liang-Barsky line clipping
+- Tool preview (ghost) lines and rays also clip and show arrowheads matching the committed object positions
+
+### Changed
+
+- Extracted `clipLineToRect` (Liang-Barsky) into `GeometryUtils` as a shared utility, removing duplicate implementations from `GeometryRenderer`, `LineTool`, and `ExportRenderer`
+
 ## [1.0.0] - 2026-10-17
 
 ### Added

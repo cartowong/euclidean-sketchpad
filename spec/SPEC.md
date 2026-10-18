@@ -310,9 +310,10 @@ The renderer makes 5 passes in order (back to front):
 
 ### 5.4 Arrow Rendering
 
-- **Lines** (and ParallelLine, PerpendicularLine): extended to `±10000` world units from the defining points. Arrowheads at both ends.
-- **Rays**: extended to `+10000` world units from the endpoint. Arrowhead at the extending end only.
-- **Segments**: no arrowheads.
+- **Lines** (and ParallelLine, PerpendicularLine): clipped to the visible viewport boundary with a 5% margin inset using **Liang-Barsky** line clipping. Arrowheads at both clipped endpoints. The line stroke ends at the arrowhead tip.
+- **Rays**: clipped the same way. Arrowhead at the extending (far) end only. The origin end is drawn without an arrowhead.
+- **Segments**: no arrowheads, no clipping.
+- **Tool previews**: ghost lines and rays during multi-click construction use the same clipping and arrowhead placement.
 
 ### 5.5 CSS Stylesheet
 

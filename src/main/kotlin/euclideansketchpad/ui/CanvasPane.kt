@@ -371,10 +371,11 @@ class CanvasPane(
     fun renderAll() {
         gridGroup.children.clear()
         if (gridVisible) drawGrid()
-        GeometryRenderer.renderAll(manager, objectGroup, transform, selectedIds, hoveredId)
+        val vpBounds = getViewportMathBounds()
+        GeometryRenderer.renderAll(manager, objectGroup, transform, selectedIds, hoveredId, vpBounds)
         constructionPreviewGroup.children.clear()
         if (previewObjects.isNotEmpty()) {
-            GeometryRenderer.renderPreviewObjects(previewObjects, constructionPreviewGroup, transform)
+            GeometryRenderer.renderPreviewObjects(previewObjects, constructionPreviewGroup, transform, vpBounds)
         }
     }
 
