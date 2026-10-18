@@ -46,6 +46,7 @@ Edit `src/main/kotlin/euclideansketchpad/Main.kt` — change the `APP_VERSION` c
   - New features or behavior not yet documented in the spec.
   - Spec sections that describe behavior differently from the current implementation.
   - Handoff sections with outdated build state, test counts, or architecture notes.
+- **No absolute paths.** Every path written to tracked files must be relative to the project root. Never write absolute filesystem paths (e.g. `/Users/...` or `/home/...`) — they leak private machine details and break on other machines.
 - If updates are needed, make them. If everything is current, skip.
 
 ### 4. Git tag and commit

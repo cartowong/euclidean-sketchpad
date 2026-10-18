@@ -1,7 +1,6 @@
 # Euclidean Sketchpad — Handoff Document
 
 **Date:** 2026-10-18
-**Workspace:** `/Users/carto/Workspace/GitRepositories/EuclideanSketchpad`
 **Branch:** `feat/1-arrowheads-at-canvas-edge` (main branch is `main`)
 
 ## Current State
