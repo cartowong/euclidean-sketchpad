@@ -21,7 +21,8 @@ class AngleTool(
     private val undoManager: UndoManager,
     private val previewGroup: Group,
     private val transform: Affine,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    private val viewportProvider: () -> DoubleArray? = { null }
 ) : Tool {
 
     private companion object {
@@ -93,20 +94,23 @@ class AngleTool(
 
         if (pointAId == null) {
             preConstructionSnapshot = manager.snapshot()
-            val id = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val id = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             val pt = manager.getObject(id) as? PointLike ?: return
             pointAId = id
             pointAX = pt.x
             pointAY = pt.y
         } else if (vertexId == null) {
-            val id = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val id = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             if (id == pointAId) return
             val pt = manager.getObject(id) as? PointLike ?: return
             vertexId = id
             vertexX = pt.x
             vertexY = pt.y
         } else {
-            val id = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val id = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             if (id == vertexId || id == pointAId) return
             manager.addObject { oid -> Angle(oid, pointAId!!, vertexId!!, id) }
             preConstructionSnapshot = null

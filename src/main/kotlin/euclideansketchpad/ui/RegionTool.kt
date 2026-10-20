@@ -20,7 +20,8 @@ class RegionTool(
     private val undoManager: UndoManager,
     private val previewGroup: Group,
     private val transform: Affine,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    private val viewportProvider: () -> DoubleArray? = { null }
 ) : Tool {
 
     private companion object {
@@ -140,7 +141,8 @@ class RegionTool(
             preConstructionSnapshot = manager.snapshot()
         }
 
-        val pointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+        val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+        val pointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
         val pt = manager.getObject(pointId) as? PointLike ?: return
         vertexIds.add(pointId)
         vertexPositions.add(Pair(pt.x, pt.y))

@@ -7,6 +7,8 @@ import euclideansketchpad.model.UndoManager
 import javafx.scene.Group
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
+import javafx.scene.shape.Arc
+import javafx.scene.shape.ArcType
 import javafx.scene.shape.Circle as FxCircle
 import javafx.scene.transform.Affine
 import kotlin.math.abs
@@ -18,7 +20,8 @@ class CircleTool(
     private val undoManager: UndoManager,
     private val previewGroup: Group,
     private val transform: Affine,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    private val viewportProvider: () -> DoubleArray? = { null }
 ) : Tool {
 
     private companion object {
@@ -73,13 +76,38 @@ class CircleTool(
                 else -> worldY
             }
             val radius = hypot(targetX - centerX, targetY - centerY)
-            val circle = FxCircle(centerX, centerY, radius)
-            circle.fill = Color.TRANSPARENT
-            circle.strokeWidth = STROKE_WIDTH * counterScale
-            circle.stroke = Color.BLACK
-            circle.opacity = 0.4
-            circle.isMouseTransparent = true
-            previewGroup.children.add(circle)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            if (clipRect != null) {
+                val arcs = GeometryUtils.clipCircleToArcs(centerX, centerY, radius, clipRect[0], clipRect[1], clipRect[2], clipRect[3])
+                if (arcs.size == 1 && kotlin.math.abs(arcs[0][1] - 360.0) < 0.01) {
+                    val circle = FxCircle(centerX, centerY, radius)
+                    circle.fill = Color.TRANSPARENT
+                    circle.strokeWidth = STROKE_WIDTH * counterScale
+                    circle.stroke = Color.BLACK
+                    circle.opacity = 0.4
+                    circle.isMouseTransparent = true
+                    previewGroup.children.add(circle)
+                } else {
+                    for (arcDef in arcs) {
+                        val arc = Arc(centerX, centerY, radius, radius, -arcDef[0], -arcDef[1])
+                        arc.type = ArcType.OPEN
+                        arc.fill = Color.TRANSPARENT
+                        arc.strokeWidth = STROKE_WIDTH * counterScale
+                        arc.stroke = Color.BLACK
+                        arc.opacity = 0.4
+                        arc.isMouseTransparent = true
+                        previewGroup.children.add(arc)
+                    }
+                }
+            } else {
+                val circle = FxCircle(centerX, centerY, radius)
+                circle.fill = Color.TRANSPARENT
+                circle.strokeWidth = STROKE_WIDTH * counterScale
+                circle.stroke = Color.BLACK
+                circle.opacity = 0.4
+                circle.isMouseTransparent = true
+                previewGroup.children.add(circle)
+            }
 
             // Ghost center and radius points
             val ghostCenter = FxCircle(centerX, centerY, POINT_RADIUS * counterScale)
@@ -95,13 +123,15 @@ class CircleTool(
 
         if (centerPointId == null) {
             preConstructionSnapshot = manager.snapshot()
-            val pointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val pointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             val pt = manager.getObject(pointId) as? PointLike ?: return
             centerPointId = pointId
             centerX = pt.x
             centerY = pt.y
         } else {
-            val radiusPointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val radiusPointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             if (radiusPointId == centerPointId) return
             manager.addObject { id -> Circle(id, centerPointId!!, radiusPointId) }
             preConstructionSnapshot = null

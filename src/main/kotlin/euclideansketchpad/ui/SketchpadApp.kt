@@ -102,12 +102,13 @@ class SketchpadApp : Application() {
         })
 
         // Create tools
-        selectionTool = SelectionTool(manager, hitTester, undoManager, requestRender)
-        val pointTool = PointTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
-        val lineTool = LineTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender) { canvasPane.getViewportMathBounds() }
-        val circleTool = CircleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
-        val angleTool = AngleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
-        val regionTool = RegionTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender)
+        val viewportProvider = { canvasPane.getViewportMathBounds() }
+        selectionTool = SelectionTool(manager, hitTester, undoManager, requestRender, viewportProvider)
+        val pointTool = PointTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
+        val lineTool = LineTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
+        val circleTool = CircleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
+        val angleTool = AngleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
+        val regionTool = RegionTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
         val labelTool = LabelTool(manager, hitTester, undoManager, canvasPane.transform, canvasPane, requestRender)
 
         val toolbar = Toolbar { toolType ->

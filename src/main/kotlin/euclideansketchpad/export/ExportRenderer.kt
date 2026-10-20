@@ -108,11 +108,11 @@ object ExportRenderer {
         if (maxX - minX < 1e-9) { minX -= 50.0; maxX += 50.0 }
         if (maxY - minY < 1e-9) { minY -= 50.0; maxY += 50.0 }
 
-        // Add 10% margin — generous enough that the 5% clip inset used by the
+        // Add 4% margin — generous enough that the 2% clip inset used by the
         // export renderer for arrowhead placement still leaves data points safely
-        // inside the clip rect (5% data-to-clip gap, 5% clip-to-edge gap).
-        val marginX = (maxX - minX) * 0.10
-        val marginY = (maxY - minY) * 0.10
+        // inside the clip rect (2% data-to-clip gap, 2% clip-to-edge gap).
+        val marginX = (maxX - minX) * 0.04
+        val marginY = (maxY - minY) * 0.04
         return doubleArrayOf(minX - marginX, minY - marginY, maxX + marginX, maxY + marginY)
     }
 
@@ -298,11 +298,7 @@ object ExportRenderer {
                     }
                 }
             } else if (obj is Circle) {
-                val circle = FxCircle(tx(obj.cx), ty(obj.cy), obj.radius * scale)
-                circle.fill = Color.TRANSPARENT
-                circle.strokeWidth = STROKE_WIDTH
-                circle.stroke = Color.BLACK
-                group.children.add(circle)
+                addClippedCirclePng(group, obj.cx, obj.cy, obj.radius, mathClipRect, scale, tx, ty)
             }
         }
 
@@ -504,8 +500,7 @@ object ExportRenderer {
                     }
                 }
             } else if (obj is Circle) {
-                val cr = obj.radius * scale
-                sb.appendLine("""  <circle cx="${fmt(tx(obj.cx))}" cy="${fmt(ty(obj.cy))}" r="${fmt(cr)}" fill="none" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+                addClippedCircleSvg(sb, obj.cx, obj.cy, obj.radius, mathClipRect, scale, tx, ty)
             }
         }
 
@@ -534,6 +529,78 @@ object ExportRenderer {
     private fun addArrowheadSvg(sb: StringBuilder, tipX: Double, tipY: Double, dirX: Double, dirY: Double) {
         val v = GeometryUtils.computeArrowheadVertices(tipX, tipY, dirX, dirY, ARROWHEAD_SIZE)
         sb.appendLine("""  <polygon points="${fmt(v[0])},${fmt(v[1])} ${fmt(v[2])},${fmt(v[3])} ${fmt(v[4])},${fmt(v[5])}" fill="black"/>""")
+    }
+
+    // --- Circle clipping helpers ---
+
+    private fun addClippedCirclePng(
+        group: Group,
+        cx: Double, cy: Double, radius: Double,
+        mathClipRect: DoubleArray,
+        scale: Double,
+        tx: (Double) -> Double, ty: (Double) -> Double
+    ) {
+        val arcs = GeometryUtils.clipCircleToArcs(cx, cy, radius, mathClipRect[0], mathClipRect[1], mathClipRect[2], mathClipRect[3])
+        if (arcs.isEmpty()) return
+
+        val pixelRadius = radius * scale
+        val pcx = tx(cx)
+        val pcy = ty(cy)
+
+        if (arcs.size == 1 && kotlin.math.abs(arcs[0][1] - 360.0) < 0.01) {
+            val circle = FxCircle(pcx, pcy, pixelRadius)
+            circle.fill = Color.TRANSPARENT
+            circle.strokeWidth = STROKE_WIDTH
+            circle.stroke = Color.BLACK
+            group.children.add(circle)
+        } else {
+            for (arcDef in arcs) {
+                // Export has no y-flip transform (ty() already flips), so negate angles
+                // to convert from math convention to pixel y-down convention.
+                val arc = Arc(pcx, pcy, pixelRadius, pixelRadius, -arcDef[0], -arcDef[1])
+                arc.type = ArcType.OPEN
+                arc.fill = Color.TRANSPARENT
+                arc.strokeWidth = STROKE_WIDTH
+                arc.stroke = Color.BLACK
+                group.children.add(arc)
+            }
+        }
+    }
+
+    private fun addClippedCircleSvg(
+        sb: StringBuilder,
+        cx: Double, cy: Double, radius: Double,
+        mathClipRect: DoubleArray,
+        scale: Double,
+        tx: (Double) -> Double, ty: (Double) -> Double
+    ) {
+        val arcs = GeometryUtils.clipCircleToArcs(cx, cy, radius, mathClipRect[0], mathClipRect[1], mathClipRect[2], mathClipRect[3])
+        if (arcs.isEmpty()) return
+
+        val cr = radius * scale
+        val pcx = tx(cx)
+        val pcy = ty(cy)
+
+        if (arcs.size == 1 && kotlin.math.abs(arcs[0][1] - 360.0) < 0.01) {
+            sb.appendLine("""  <circle cx="${fmt(pcx)}" cy="${fmt(pcy)}" r="${fmt(cr)}" fill="none" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+        } else {
+            for (arcDef in arcs) {
+                val startRad = arcDef[0] * PI / 180.0
+                val sweepRad = arcDef[1] * PI / 180.0
+                // Start point in math coords, then transform to pixel coords
+                val sx = cx + radius * cos(startRad)
+                val sy = cy + radius * sin(startRad)
+                val ex = cx + radius * cos(startRad + sweepRad)
+                val ey = cy + radius * sin(startRad + sweepRad)
+                val psx = tx(sx); val psy = ty(sy)
+                val pex = tx(ex); val pey = ty(ey)
+                val largeArc = if (arcDef[1] > 180.0) 1 else 0
+                // In SVG y-down pixel coords, a math CCW arc maps to sweep-flag=0
+                // (because ty flips y, reversing the winding)
+                val sweepFlag = 0
+                sb.appendLine("""  <path d="M ${fmt(psx)} ${fmt(psy)} A ${fmt(cr)} ${fmt(cr)} 0 $largeArc $sweepFlag ${fmt(pex)} ${fmt(pey)}" fill="none" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+            }
+        }
     }
 
     // --- Shared helpers ---
