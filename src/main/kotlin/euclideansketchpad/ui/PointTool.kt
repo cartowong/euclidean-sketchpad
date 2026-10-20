@@ -17,7 +17,8 @@ class PointTool(
     private val undoManager: UndoManager,
     private val previewGroup: Group,
     private val transform: Affine,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    private val viewportProvider: () -> DoubleArray? = { null }
 ) : Tool {
 
     private companion object {
@@ -56,7 +57,16 @@ class PointTool(
                 createSemiFreePointOnCircle(hit.id, worldX, worldY)
             }
             else -> {
-                manager.addObject { id -> FreePoint(id, worldX, worldY) }
+                val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+                val px: Double
+                val py: Double
+                if (clipRect != null) {
+                    val clamped = GeometryUtils.clampToRect(worldX, worldY, clipRect)
+                    px = clamped[0]; py = clamped[1]
+                } else {
+                    px = worldX; py = worldY
+                }
+                manager.addObject { id -> FreePoint(id, px, py) }
             }
         }
         hitTester.rebuildIntersectionCache()

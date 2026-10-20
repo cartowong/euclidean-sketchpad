@@ -40,13 +40,22 @@ object ToolUtils {
         worldY: Double,
         manager: GeometricObjectManager,
         hitTester: HitTester,
-        requestRender: () -> Unit
+        requestRender: () -> Unit,
+        clipRect: DoubleArray? = null
     ): Int {
         return when (hit) {
             is HitResult.ConstructedPoint -> hit.id
             is HitResult.IntersectionPreview -> constructIntersection(hit.candidate, manager, hitTester, requestRender)
             else -> {
-                val pt = manager.addObject { id -> FreePoint(id, worldX, worldY) }
+                val px: Double
+                val py: Double
+                if (clipRect != null) {
+                    val clamped = GeometryUtils.clampToRect(worldX, worldY, clipRect)
+                    px = clamped[0]; py = clamped[1]
+                } else {
+                    px = worldX; py = worldY
+                }
+                val pt = manager.addObject { id -> FreePoint(id, px, py) }
                 hitTester.rebuildIntersectionCache()
                 requestRender()
                 pt.id

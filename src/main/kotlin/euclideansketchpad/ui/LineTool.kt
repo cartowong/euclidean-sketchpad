@@ -92,14 +92,16 @@ class LineTool(
         if (firstPointId == null) {
             // First click: set first point
             preConstructionSnapshot = manager.snapshot()
-            val pointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val pointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             val pt = manager.getObject(pointId) as? PointLike ?: return
             firstPointId = pointId
             firstX = pt.x
             firstY = pt.y
         } else {
             // Second click: set second point and create linear object
-            val secondPointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender)
+            val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+            val secondPointId = ToolUtils.resolveOrCreatePoint(hit, worldX, worldY, manager, hitTester, requestRender, clipRect)
             if (secondPointId == firstPointId) return // same point, ignore
 
             when (subMode) {

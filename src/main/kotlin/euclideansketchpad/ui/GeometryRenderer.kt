@@ -19,6 +19,7 @@ import javafx.scene.text.Font
 import javafx.scene.text.Text
 import javafx.scene.transform.Affine
 import kotlin.math.PI
+import kotlin.math.abs
 
 private val SELECTED_COLOR = Color.web("#2196F3")
 private val HOVER_COLOR = Color.web("#2196F3")
@@ -192,11 +193,7 @@ object GeometryRenderer {
                     }
                 }
             } else if (obj is Circle) {
-                val circle = FxCircle(obj.cx, obj.cy, obj.radius)
-                circle.fill = Color.TRANSPARENT
-                circle.strokeWidth = strokeWidth
-                circle.stroke = color
-                group.children.add(circle)
+                addClippedCircle(group, obj.cx, obj.cy, obj.radius, strokeWidth, color, clipRect)
             }
         }
 
@@ -370,13 +367,7 @@ object GeometryRenderer {
                     }
                 }
             } else if (obj is Circle) {
-                val circle = FxCircle(obj.cx, obj.cy, obj.radius)
-                circle.fill = Color.TRANSPARENT
-                circle.strokeWidth = strokeWidth
-                circle.stroke = color
-                circle.opacity = PREVIEW_OPACITY
-                circle.isMouseTransparent = true
-                group.children.add(circle)
+                addClippedCircle(group, obj.cx, obj.cy, obj.radius, strokeWidth, color, clipRect, PREVIEW_OPACITY, true)
             }
         }
 
@@ -389,6 +380,55 @@ object GeometryRenderer {
             ptCircle.opacity = PREVIEW_OPACITY
             ptCircle.isMouseTransparent = true
             group.children.add(ptCircle)
+        }
+    }
+
+    /**
+     * Render a circle clipped to the given clip rect. If no clip rect, renders full circle.
+     * Uses JavaFX Arc nodes for partial arcs.
+     */
+    private fun addClippedCircle(
+        group: Group,
+        cx: Double, cy: Double, radius: Double,
+        strokeWidth: Double, color: Color,
+        clipRect: DoubleArray?,
+        opacity: Double = 1.0,
+        mouseTransparent: Boolean = false
+    ) {
+        if (clipRect != null) {
+            val arcs = GeometryUtils.clipCircleToArcs(cx, cy, radius, clipRect[0], clipRect[1], clipRect[2], clipRect[3])
+            if (arcs.isEmpty()) return
+            // Check if it's a full circle (single arc with 360 sweep)
+            if (arcs.size == 1 && abs(arcs[0][1] - 360.0) < 0.01) {
+                val circle = FxCircle(cx, cy, radius)
+                circle.fill = Color.TRANSPARENT
+                circle.strokeWidth = strokeWidth
+                circle.stroke = color
+                if (opacity < 1.0) circle.opacity = opacity
+                if (mouseTransparent) circle.isMouseTransparent = true
+                group.children.add(circle)
+            } else {
+                for (arcDef in arcs) {
+                    // clipCircleToArcs returns angles in math convention (CCW from +x).
+                    // In the y-flipped world group, JavaFX Arc angles need negation.
+                    val arc = Arc(cx, cy, radius, radius, -arcDef[0], -arcDef[1])
+                    arc.type = ArcType.OPEN
+                    arc.fill = Color.TRANSPARENT
+                    arc.strokeWidth = strokeWidth
+                    arc.stroke = color
+                    if (opacity < 1.0) arc.opacity = opacity
+                    if (mouseTransparent) arc.isMouseTransparent = true
+                    group.children.add(arc)
+                }
+            }
+        } else {
+            val circle = FxCircle(cx, cy, radius)
+            circle.fill = Color.TRANSPARENT
+            circle.strokeWidth = strokeWidth
+            circle.stroke = color
+            if (opacity < 1.0) circle.opacity = opacity
+            if (mouseTransparent) circle.isMouseTransparent = true
+            group.children.add(circle)
         }
     }
 

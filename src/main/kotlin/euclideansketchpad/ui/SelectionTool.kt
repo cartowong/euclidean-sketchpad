@@ -1,5 +1,7 @@
 package euclideansketchpad.ui
 
+import euclideansketchpad.geometry.FreePoint
+import euclideansketchpad.geometry.GeometryUtils
 import euclideansketchpad.geometry.PointLike
 import euclideansketchpad.model.GeometricObjectManager
 import euclideansketchpad.model.UndoManager
@@ -10,7 +12,8 @@ class SelectionTool(
     private val manager: GeometricObjectManager,
     private val hitTester: HitTester,
     private val undoManager: UndoManager,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    private val viewportProvider: () -> DoubleArray? = { null }
 ) : Tool {
 
     val selectedIds = mutableSetOf<Int>()
@@ -74,10 +77,19 @@ class SelectionTool(
         val dy = worldY - lastDragWorldY
         isDragging = true
 
+        val clipRect = viewportProvider()?.let { GeometryUtils.computeClipRect(it) }
+
         for (id in selectedIds) {
             val obj = manager.getObject(id) ?: continue
             if (obj is PointLike) {
-                manager.movePoint(id, obj.x + dx, obj.y + dy)
+                var newX = obj.x + dx
+                var newY = obj.y + dy
+                // Only clamp free points — derived/semi-free points are mathematically determined
+                if (obj is FreePoint && clipRect != null) {
+                    val clamped = GeometryUtils.clampToRect(newX, newY, clipRect)
+                    newX = clamped[0]; newY = clamped[1]
+                }
+                manager.movePoint(id, newX, newY)
             }
         }
         lastDragWorldX = worldX

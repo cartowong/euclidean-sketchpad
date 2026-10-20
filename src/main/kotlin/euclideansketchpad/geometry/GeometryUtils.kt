@@ -8,6 +8,11 @@ import kotlin.math.hypot
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
+import kotlin.math.acos
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.PI
 
 object GeometryUtils {
 
@@ -22,7 +27,7 @@ object GeometryUtils {
      * Compute a clip rect inset by [marginFraction] from the given bounds.
      * bounds = [minX, minY, maxX, maxY]
      */
-    fun computeClipRect(bounds: DoubleArray, marginFraction: Double = 0.05): DoubleArray {
+    fun computeClipRect(bounds: DoubleArray, marginFraction: Double = 0.02): DoubleArray {
         val w = bounds[2] - bounds[0]
         val h = bounds[3] - bounds[1]
         val mx = w * marginFraction
@@ -165,5 +170,137 @@ object GeometryUtils {
             x1 + t0 * dx, y1 + t0 * dy,
             x1 + t1 * dx, y1 + t1 * dy
         )
+    }
+
+    /**
+     * Clamp a point (x, y) to the given clip rect [xmin, ymin, xmax, ymax].
+     * X and Y are clamped independently.
+     */
+    fun clampToRect(x: Double, y: Double, clipRect: DoubleArray): DoubleArray {
+        return doubleArrayOf(
+            x.coerceIn(clipRect[0], clipRect[2]),
+            y.coerceIn(clipRect[1], clipRect[3])
+        )
+    }
+
+    /**
+     * Clip a circle to an axis-aligned rectangle, returning visible arc segments.
+     *
+     * Each arc is represented as [startAngleDegrees, sweepAngleDegrees] in standard
+     * math convention (counter-clockwise from positive x-axis). These values are
+     * suitable for JavaFX Arc nodes in a y-up coordinate system.
+     *
+     * Returns an empty list if the circle is fully outside the rect.
+     * Returns a single arc with sweep 360 if the circle is fully inside.
+     */
+    fun clipCircleToArcs(
+        cx: Double, cy: Double, radius: Double,
+        xmin: Double, ymin: Double, xmax: Double, ymax: Double
+    ): List<DoubleArray> {
+        if (radius <= 0.0) return emptyList()
+
+        // Quick reject: circle bounding box vs clip rect
+        if (cx + radius < xmin || cx - radius > xmax ||
+            cy + radius < ymin || cy - radius > ymax) {
+            return emptyList()
+        }
+
+        // Quick accept: circle fully inside
+        if (cx - radius >= xmin && cx + radius <= xmax &&
+            cy - radius >= ymin && cy + radius <= ymax) {
+            return listOf(doubleArrayOf(0.0, 360.0))
+        }
+
+        // Find all intersection angles between circle and the 4 rect edges.
+        // Each edge is a line segment; we find where the circle crosses it.
+        val angles = mutableListOf<Double>()
+
+        // Left edge: x = xmin, y in [ymin, ymax]
+        intersectCircleVerticalEdge(cx, cy, radius, xmin, ymin, ymax, angles)
+        // Right edge: x = xmax, y in [ymin, ymax]
+        intersectCircleVerticalEdge(cx, cy, radius, xmax, ymin, ymax, angles)
+        // Bottom edge: y = ymin, x in [xmin, xmax]
+        intersectCircleHorizontalEdge(cx, cy, radius, ymin, xmin, xmax, angles)
+        // Top edge: y = ymax, x in [xmin, xmax]
+        intersectCircleHorizontalEdge(cx, cy, radius, ymax, xmin, xmax, angles)
+
+        if (angles.isEmpty()) {
+            // No intersections — circle is either fully inside or fully outside.
+            // We already handled fully inside above, so check if center is inside.
+            // (Edge case: circle bigger than rect but no intersections means it encloses the rect,
+            //  but some point on the circle could still be outside. Check a sample point.)
+            val sampleX = cx + radius
+            val sampleY = cy
+            return if (sampleX in xmin..xmax && sampleY in ymin..ymax) {
+                listOf(doubleArrayOf(0.0, 360.0))
+            } else {
+                emptyList()
+            }
+        }
+
+        // Sort angles and deduplicate (angles very close together from corner touches)
+        angles.sort()
+        val uniqueAngles = mutableListOf(angles[0])
+        for (i in 1 until angles.size) {
+            if (angles[i] - uniqueAngles.last() > 1e-9) {
+                uniqueAngles.add(angles[i])
+            }
+        }
+
+        // For each arc between consecutive intersection angles, test if its midpoint
+        // is inside the rect. If so, include it.
+        val result = mutableListOf<DoubleArray>()
+        val n = uniqueAngles.size
+        for (i in 0 until n) {
+            val a1 = uniqueAngles[i]
+            val a2 = if (i + 1 < n) uniqueAngles[i + 1] else uniqueAngles[0] + 2.0 * PI
+            val midAngle = (a1 + a2) / 2.0
+            val mx = cx + radius * cos(midAngle)
+            val my = cy + radius * sin(midAngle)
+            // Use a small tolerance for the containment test
+            val tol = 1e-9
+            if (mx >= xmin - tol && mx <= xmax + tol && my >= ymin - tol && my <= ymax + tol) {
+                val startDeg = a1 * 180.0 / PI
+                val sweepDeg = (a2 - a1) * 180.0 / PI
+                result.add(doubleArrayOf(startDeg, sweepDeg))
+            }
+        }
+
+        return result
+    }
+
+    private fun intersectCircleVerticalEdge(
+        cx: Double, cy: Double, radius: Double,
+        edgeX: Double, ymin: Double, ymax: Double,
+        angles: MutableList<Double>
+    ) {
+        val dx = edgeX - cx
+        if (abs(dx) > radius) return
+        val dy = sqrt(radius * radius - dx * dx)
+        val y1 = cy + dy
+        val y2 = cy - dy
+        if (y1 in ymin..ymax) angles.add(normalizeAngle(atan2(y1 - cy, dx)))
+        if (y2 in ymin..ymax && abs(dy) > 1e-12) angles.add(normalizeAngle(atan2(y2 - cy, dx)))
+    }
+
+    private fun intersectCircleHorizontalEdge(
+        cx: Double, cy: Double, radius: Double,
+        edgeY: Double, xmin: Double, xmax: Double,
+        angles: MutableList<Double>
+    ) {
+        val dy = edgeY - cy
+        if (abs(dy) > radius) return
+        val dx = sqrt(radius * radius - dy * dy)
+        val x1 = cx + dx
+        val x2 = cx - dx
+        if (x1 in xmin..xmax) angles.add(normalizeAngle(atan2(dy, x1 - cx)))
+        if (x2 in xmin..xmax && abs(dx) > 1e-12) angles.add(normalizeAngle(atan2(dy, x2 - cx)))
+    }
+
+    /** Normalize angle to [0, 2*PI). */
+    private fun normalizeAngle(a: Double): Double {
+        var result = a % (2.0 * PI)
+        if (result < 0.0) result += 2.0 * PI
+        return result
     }
 }

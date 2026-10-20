@@ -3,6 +3,7 @@ package euclideansketchpad.geometry
 import org.junit.jupiter.api.Test
 import kotlin.math.sqrt
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class GeometryUtilsTest {
 
@@ -65,5 +66,105 @@ class GeometryUtilsTest {
         assertEquals(0.5, GeometryUtils.closestParameterOnLine(1.0, 5.0, 0.0, 0.0, 2.0, 0.0), eps)
         // Before start
         assertEquals(-0.5, GeometryUtils.closestParameterOnLine(-1.0, 0.0, 0.0, 0.0, 2.0, 0.0), eps)
+    }
+
+    // --- clampToRect tests ---
+
+    @Test
+    fun `clampToRect - point inside rect unchanged`() {
+        val r = GeometryUtils.clampToRect(5.0, 5.0, doubleArrayOf(0.0, 0.0, 10.0, 10.0))
+        assertEquals(5.0, r[0], eps)
+        assertEquals(5.0, r[1], eps)
+    }
+
+    @Test
+    fun `clampToRect - point outside rect is clamped`() {
+        val r = GeometryUtils.clampToRect(-5.0, 15.0, doubleArrayOf(0.0, 0.0, 10.0, 10.0))
+        assertEquals(0.0, r[0], eps)
+        assertEquals(10.0, r[1], eps)
+    }
+
+    @Test
+    fun `clampToRect - point on edge unchanged`() {
+        val r = GeometryUtils.clampToRect(0.0, 10.0, doubleArrayOf(0.0, 0.0, 10.0, 10.0))
+        assertEquals(0.0, r[0], eps)
+        assertEquals(10.0, r[1], eps)
+    }
+
+    @Test
+    fun `clampToRect - x and y clamped independently`() {
+        val r = GeometryUtils.clampToRect(-1.0, 5.0, doubleArrayOf(0.0, 0.0, 10.0, 10.0))
+        assertEquals(0.0, r[0], eps)
+        assertEquals(5.0, r[1], eps)
+    }
+
+    // --- clipCircleToArcs tests ---
+
+    @Test
+    fun `clipCircleToArcs - circle fully inside rect returns full circle`() {
+        val arcs = GeometryUtils.clipCircleToArcs(5.0, 5.0, 2.0, 0.0, 0.0, 10.0, 10.0)
+        assertEquals(1, arcs.size)
+        assertEquals(0.0, arcs[0][0], eps)
+        assertEquals(360.0, arcs[0][1], eps)
+    }
+
+    @Test
+    fun `clipCircleToArcs - circle fully outside rect returns empty`() {
+        val arcs = GeometryUtils.clipCircleToArcs(50.0, 50.0, 2.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isEmpty())
+    }
+
+    @Test
+    fun `clipCircleToArcs - circle partially overlapping right edge`() {
+        // Circle centered at (9, 5) with radius 3: extends from x=6 to x=12.
+        // Rect is [0, 0, 10, 10]. Circle crosses right edge at x=10.
+        val arcs = GeometryUtils.clipCircleToArcs(9.0, 5.0, 3.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isNotEmpty())
+        // Total sweep should be less than 360 (something got clipped)
+        val totalSweep = arcs.sumOf { it[1] }
+        assertTrue(totalSweep < 360.0)
+        assertTrue(totalSweep > 0.0)
+    }
+
+    @Test
+    fun `clipCircleToArcs - circle extends past two edges`() {
+        // Circle centered at (9, 9) with radius 3: extends past right and top edges
+        val arcs = GeometryUtils.clipCircleToArcs(9.0, 9.0, 3.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isNotEmpty())
+        val totalSweep = arcs.sumOf { it[1] }
+        assertTrue(totalSweep < 360.0)
+    }
+
+    @Test
+    fun `clipCircleToArcs - very large circle enclosing rect`() {
+        // Circle centered at (5, 5) with radius 1000 — encloses the entire rect
+        // but most of the circle is outside. No intersections with edges because
+        // the edges are fully inside the circle. Sample point (1005, 5) is outside the rect.
+        val arcs = GeometryUtils.clipCircleToArcs(5.0, 5.0, 1000.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isEmpty())
+    }
+
+    @Test
+    fun `clipCircleToArcs - circle tangent to edge`() {
+        // Circle centered at (5, 5) with radius 5: tangent to x=0 at (0, 5)
+        val arcs = GeometryUtils.clipCircleToArcs(5.0, 5.0, 5.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isNotEmpty())
+    }
+
+    @Test
+    fun `clipCircleToArcs - zero radius returns empty`() {
+        val arcs = GeometryUtils.clipCircleToArcs(5.0, 5.0, 0.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isEmpty())
+    }
+
+    @Test
+    fun `clipCircleToArcs - circle crosses all four edges`() {
+        // Circle centered at (5, 5) with radius 6 in rect [0, 0, 10, 10]
+        // Crosses all 4 edges
+        val arcs = GeometryUtils.clipCircleToArcs(5.0, 5.0, 6.0, 0.0, 0.0, 10.0, 10.0)
+        assertTrue(arcs.isNotEmpty())
+        val totalSweep = arcs.sumOf { it[1] }
+        assertTrue(totalSweep > 0.0)
+        assertTrue(totalSweep < 360.0)
     }
 }

@@ -308,12 +308,14 @@ The renderer makes 5 passes in order (back to front):
 4. **Points** (filled circles, on top)
 5. **Labels** (text, counter-scaled and y-flipped via `scaleY = -1`)
 
-### 5.4 Arrow Rendering
+### 5.4 Arrow Rendering and Viewport Clipping
 
-- **Lines** (and ParallelLine, PerpendicularLine): clipped to the visible viewport boundary with a 5% margin inset using **Liang-Barsky** line clipping. Arrowheads at both clipped endpoints. The line stroke ends at the arrowhead tip.
+- **Lines** (and ParallelLine, PerpendicularLine): clipped to the visible viewport boundary with a 2% margin inset using **Liang-Barsky** line clipping. Arrowheads at both clipped endpoints. The line stroke ends at the arrowhead tip.
 - **Rays**: clipped the same way. Arrowhead at the extending (far) end only. The origin end is drawn without an arrowhead.
 - **Segments**: no arrowheads, no clipping.
-- **Tool previews**: ghost lines and rays during multi-click construction use the same clipping and arrowhead placement.
+- **Circles**: visually clipped to the same 2% inset clip rect by rendering only the arc segments inside the boundary. No arrowheads — arcs simply terminate. Applies to canvas rendering, circle tool preview, construction preview, and both export paths.
+- **Point clamping**: free points created by direct click (PointTool, auto-constructed points in multi-click tools) and free points being dragged (SelectionTool) are clamped to the clip rect. Derived points (intersections, semi-free points, construction results) are not clamped. Clamping is dynamic (evaluated at interaction time against current viewport). X and Y are clamped independently.
+- **Tool previews**: ghost lines, rays, and circles during multi-click construction use the same clipping.
 
 ### 5.5 CSS Stylesheet
 
@@ -622,7 +624,7 @@ Exports at the canvas's current screen size. Width/height fields are non-editabl
   - All visible points.
   - Parent points of all visible linears and regions (regardless of parent visibility).
   - Extremal points of visible circles (top, bottom, left, right of each circle).
-  - 10% margin on all sides (accommodates the 5% clip inset used during export rendering, leaving ~5% visible margin between arrowheads and image edge).
+  - 4% margin on all sides (accommodates the 2% clip inset used during export rendering, leaving ~2% visible margin between arrowheads and image edge).
   - Degenerate fallback: if bounding box is empty, uses `[-100, -100, 100, 100]`. If width or height is near zero, pads by 50 units.
 
 ### 12.5 Export Rendering
@@ -631,7 +633,7 @@ Both PNG and SVG exports share the same rendering logic:
 
 - Selection and hover states are cleared (all objects render black).
 - 5 passes: regions → angles → linears/circles → points → labels.
-- Lines and rays are clipped to the export region (with 5% margin inset) using **Liang-Barsky** line clipping. Arrowheads at clip points.
+- Lines, rays, and circles are clipped to the export region (with 2% margin inset). Lines and rays use **Liang-Barsky** clipping with arrowheads at clip points. Circles render only visible arc segments inside the clip rect.
 - Region fill: yellow (`#FFEB3B`, 0.3 opacity).
 - Angle fill: green (`#4CAF50`, 0.3 opacity).
 - Grid uses the same adaptive spacing algorithm as the canvas.

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-19
+
+### Added
+
+- Viewport clipping for circles: circles are visually clipped to the viewport boundary (2% margin inset), rendering only the arc segments inside the visible area. Applies to canvas rendering, circle tool preview, construction preview, and both export paths (PNG and SVG)
+- Point clamping: free points created by direct click or auto-constructed in multi-click tools are clamped to the viewport clip rect. Free points being dragged are also clamped. Derived points (intersections, semi-free points, construction results) are not clamped
+- New `clampToRect` and `clipCircleToArcs` utility functions in `GeometryUtils`
+- 12 new unit tests for `clampToRect` and `clipCircleToArcs`
+
+### Changed
+
+- Viewport clipping margin reduced from 5% to 2% inset for all clipped objects (lines, rays, circles, points)
+- Auto-fit export margin reduced from 10% to 4% to match the 2% clip inset (2% data-to-clip gap, 2% clip-to-edge gap)
+- All tools (`PointTool`, `SelectionTool`, `CircleTool`, `LineTool`, `AngleTool`, `RegionTool`) now receive a shared `viewportProvider` lambda for consistent viewport-aware behavior
+
 ## [1.1.1] - 2026-10-18
 
 ### Fixed
