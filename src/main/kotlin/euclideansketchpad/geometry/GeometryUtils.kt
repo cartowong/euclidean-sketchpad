@@ -22,12 +22,13 @@ object GeometryUtils {
     const val ARROWHEAD_SIZE = 8.0
     const val ANGLE_ARC_RADIUS = 20.0
     const val FONT_SIZE = 12.0
+    const val VIEWPORT_MARGIN_FRACTION = 0.02
 
     /**
      * Compute a clip rect inset by [marginFraction] from the given bounds.
      * bounds = [minX, minY, maxX, maxY]
      */
-    fun computeClipRect(bounds: DoubleArray, marginFraction: Double = 0.02): DoubleArray {
+    fun computeClipRect(bounds: DoubleArray, marginFraction: Double = VIEWPORT_MARGIN_FRACTION): DoubleArray {
         val w = bounds[2] - bounds[0]
         val h = bounds[3] - bounds[1]
         val mx = w * marginFraction

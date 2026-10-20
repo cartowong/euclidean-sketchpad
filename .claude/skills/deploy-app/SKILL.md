@@ -1,7 +1,7 @@
 ---
 name: deploy-app
 description: Tag and commit a release of Euclidean Sketchpad. Bumps APP_VERSION, updates CHANGELOG, syncs spec/handoff docs, and creates a git tag. Use when user says "deploy", "release", "cut a release", "deploy-app", or wants to prepare a versioned release.
-allowed-tools: Bash(git tag *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr create *)
+allowed-tools: Bash(git tag *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr create *) Bash(./gradlew *)
 ---
 
 # Deploy App
@@ -20,7 +20,7 @@ This skill requires a **version number** (e.g. `1.0.1`, `1.1.0`, `2.0.0`).
 1. Read the current version from `APP_VERSION` in `src/main/kotlin/euclideansketchpad/Main.kt`.
 2. Compare the requested version to the current version using semver ordering:
    - **Requested < current**: warn the user that this is a downgrade and ask for confirmation before proceeding.
-   - **Requested == current**: skip version-bump steps (no code changes needed). Proceed to doc review and tagging only if there are untagged changes.
+   - **Requested == current**: check if the git tag `v<version>` already exists (`git tag -l "v<version>"`). If it does, **stop** and tell the user the version is already released — they must provide a higher version number. If the tag does not exist, skip version-bump steps and proceed to doc review and tagging.
    - **Requested > current**: proceed with the full flow below.
 
 ## Release flow (version > current)
@@ -49,12 +49,17 @@ Edit `src/main/kotlin/euclideansketchpad/Main.kt` — change the `APP_VERSION` c
 - **No absolute paths.** Every path written to tracked files must be relative to the project root. Never write absolute filesystem paths (e.g. `/Users/...` or `/home/...`) — they leak private machine details and break on other machines.
 - If updates are needed, make them. If everything is current, skip.
 
-### 4. Git tag and commit
+### 4. Run tests
+
+- Run `./gradlew clean test`.
+- If any test fails, **stop the release**. Report the failures to the user and do not proceed to commit or tag.
+
+### 5. Git tag and commit
 
 - Stage all changed files: `git add` each modified file by name.
 - Commit with message: `Release v<version>`
 
-### 5. Push and release
+### 6. Push and release
 
 Check which branch you are on (`git branch --show-current`).
 

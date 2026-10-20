@@ -108,11 +108,12 @@ object ExportRenderer {
         if (maxX - minX < 1e-9) { minX -= 50.0; maxX += 50.0 }
         if (maxY - minY < 1e-9) { minY -= 50.0; maxY += 50.0 }
 
-        // Add 4% margin — generous enough that the 2% clip inset used by the
-        // export renderer for arrowhead placement still leaves data points safely
-        // inside the clip rect (2% data-to-clip gap, 2% clip-to-edge gap).
-        val marginX = (maxX - minX) * 0.04
-        val marginY = (maxY - minY) * 0.04
+        // Add 4× the viewport margin fraction so that the clip inset used by
+        // the export renderer for arrowhead placement still leaves data points
+        // safely inside the clip rect with comfortable padding beyond the clip
+        // boundary.
+        val marginX = (maxX - minX) * 4 * GeometryUtils.VIEWPORT_MARGIN_FRACTION
+        val marginY = (maxY - minY) * 4 * GeometryUtils.VIEWPORT_MARGIN_FRACTION
         return doubleArrayOf(minX - marginX, minY - marginY, maxX + marginX, maxY + marginY)
     }
 

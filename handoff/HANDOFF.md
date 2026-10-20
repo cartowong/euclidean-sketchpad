@@ -1,14 +1,14 @@
 # Euclidean Sketchpad — Handoff Document
 
-**Date:** 2026-10-19
-**Branch:** `feat/viewport-clipping`
+**Date:** 2026-10-20
+**Branch:** `main`
 
 ## Current State
 
 - **Build:** `./gradlew clean test` passes (136 tests). Clean build.
 - **Git:** `.claude/` is gitignored.
 - **Runtime:** `./gradlew run` launches the full app.
-- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.2.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
+- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.2.1.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
 - **Spec alignment:** All features described in `spec/SPEC.md` are implemented, including the `LinearLike` interface, 4 built-in constructions, specific type display names, "Custom Constructions" table rename, and viewport clipping for all object types.
 
 ## Architecture Notes
@@ -26,10 +26,10 @@
 - **`APP_VERSION` is the single source of truth for the version string.** Defined as a top-level `const val` in `Main.kt`. Referenced by `DiagramSerializer`, `ConstructionSerializer`, and the About dialog.
 - **Diagram open validates before resetting.** `SketchpadApp` parses and validates the file's version before calling `resetDiagram()`, so a version mismatch doesn't destroy the user's current work. The entire open operation is wrapped in a try-catch that shows an error alert.
 - **jpackage uses `org.beryx.runtime` plugin with hardcoded modules.** The plugin's auto-detection (`suggestModules`) crashes on deeply-nested Kotlin anonymous classes. Modules are explicitly set to `java.base`, `java.desktop`, `java.logging`, `jdk.unsupported`. The jpackage `appVersion` is read from `APP_VERSION` in `Main.kt` at build time (macOS jpackage rejects versions starting with `0`). The `.icns` icon at `packaging/macos/EuclideanSketchpad.icns` was generated from `app-icon.png` via `sips` + `iconutil`.
-- **Rendering constants and utilities are centralized in `GeometryUtils`.** `POINT_RADIUS`, `STROKE_WIDTH`, `LINE_EXTENT`, `ARROWHEAD_SIZE`, `ANGLE_ARC_RADIUS`, `FONT_SIZE` are defined once there and imported by `GeometryRenderer`, `LineTool`, and `ExportRenderer`. Shared functions include `clipLineToRect` (Liang-Barsky), `clipCircleToArcs`, `clampToRect`, `computeClipRect`, `computeArrowheadVertices`, and `computeAdaptiveGridSpacing`. `getObjectAnchor()` is a top-level function in `model/ObjectMetadata.kt`.
+- **Rendering constants and utilities are centralized in `GeometryUtils`.** `POINT_RADIUS`, `STROKE_WIDTH`, `LINE_EXTENT`, `ARROWHEAD_SIZE`, `ANGLE_ARC_RADIUS`, `FONT_SIZE`, and `VIEWPORT_MARGIN_FRACTION` are defined once there and imported by `GeometryRenderer`, `LineTool`, and `ExportRenderer`. Shared functions include `clipLineToRect` (Liang-Barsky), `clipCircleToArcs`, `clampToRect`, `computeClipRect`, `computeArrowheadVertices`, and `computeAdaptiveGridSpacing`. `getObjectAnchor()` is a top-level function in `model/ObjectMetadata.kt`.
 - **Viewport clipping uses a 2% margin inset.** `GeometryRenderer.renderAll()` and `renderPreviewObjects()` receive `viewportBounds` from `CanvasPane.getViewportMathBounds()`, compute a clip rect inset by 2% via `GeometryUtils.computeClipRect()`, and clip lines/rays/circles to it. Lines/rays use Liang-Barsky; circles use `clipCircleToArcs` which computes visible arc segments via circle-rectangle intersection. All tools receive a shared `viewportProvider` lambda from `SketchpadApp`.
 - **Point clamping is viewport-aware.** Free points created by `PointTool` or auto-constructed via `ToolUtils.resolveOrCreatePoint()` are clamped to the clip rect. `SelectionTool` clamps `FreePoint` drag destinations. Derived points (intersections, semi-free, construction results) are not clamped.
-- **Export clipping uses the same 2% inset.** `ExportRenderer` clips lines/rays/circles in math coordinates against a 2% inset of the export bounds, then transforms to pixel coordinates. For auto-fit exports, `computeAutoFitBounds()` uses a 4% margin (not 2%) so that data-edge points remain inside the clip rect after the 2% inset is applied.
+- **Export clipping uses the same 2% inset.** `ExportRenderer` clips lines/rays/circles in math coordinates against a 2% inset of the export bounds, then transforms to pixel coordinates. For auto-fit exports, `computeAutoFitBounds()` uses an 8% margin (4× `VIEWPORT_MARGIN_FRACTION`) for comfortable padding beyond the clip boundary.
 - **Export label offsets negate `labelOffsetY`.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction. The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY` to produce the same visual result.
 
 ## Known Issues / Gaps
