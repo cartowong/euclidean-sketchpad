@@ -1,7 +1,7 @@
 ---
 name: deploy-app
 description: Tag and commit a release of Euclidean Sketchpad. Bumps APP_VERSION, updates CHANGELOG, syncs spec/handoff docs, and creates a git tag. Use when user says "deploy", "release", "cut a release", "deploy-app", or wants to prepare a versioned release.
-allowed-tools: Bash(git tag *) Bash(git add *) Bash(git commit *)
+allowed-tools: Bash(git tag *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr create *)
 ---
 
 # Deploy App
@@ -53,7 +53,24 @@ Edit `src/main/kotlin/euclideansketchpad/Main.kt` — change the `APP_VERSION` c
 
 - Stage all changed files: `git add` each modified file by name.
 - Commit with message: `Release v<version>`
+
+### 5. Push and release
+
+Check which branch you are on (`git branch --show-current`).
+
+**If on `main`:**
 - Create an annotated git tag: `git tag -a v<version> -m "Release v<version>"`
-- **Remind the user that the commit and tag have NOT been pushed.** Suggest: `git push --follow-tags`
-- Explain that pushing the `v*` tag will trigger the GitHub Actions release workflow (`.github/workflows/release.yml`), which builds macOS (.dmg) and Windows (.msi) installers and creates a GitHub Release with them attached.
-- **IMPORTANT — tag must be pushed from `main`.** The release tag must point to a commit on `main` (typically the merge commit) and be pushed from `main`. If the tag is created on a feature branch and pushed before merging, the release workflow may fire against the branch commit. If the branch is later deleted, the release can fail or never trigger. Always: merge the PR first, switch to `main`, pull, then tag and push.
+- Push the commit and tag: `git push --follow-tags`
+- Explain that pushing the `v*` tag triggers the GitHub Actions release workflow (`.github/workflows/release.yml`), which builds macOS (.dmg) and Windows (.msi) installers and creates a GitHub Release with them attached.
+
+**If on a feature/side branch:**
+- Do **NOT** create the git tag yet.
+- Push the branch: `git push -u origin <branch-name>`
+- Create a pull request: `gh pr create --title "Release v<version>" --body "<brief description of what changed in this release>"`
+- Tell the user: after the PR is merged, switch to `main`, pull, then create and push the tag:
+  ```
+  git checkout main && git pull
+  git tag -a v<version> -m "Release v<version>"
+  git push --follow-tags
+  ```
+- **IMPORTANT — tag must be pushed from `main`.** The release tag must point to a commit on `main` (typically the merge commit) and be pushed from `main`. If the tag is created on a feature branch and pushed before merging, the release workflow may fire against the branch commit. If the branch is later deleted, the release can fail or never trigger.
