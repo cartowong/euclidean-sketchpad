@@ -1,7 +1,7 @@
 # Euclidean Sketchpad — Handoff Document
 
-**Date:** 2026-10-18
-**Branch:** `main`
+**Date:** 2026-10-19
+**Branch:** `feat/viewport-clipping`
 
 ## Current State
 
@@ -30,3 +30,9 @@
 - **Arrowhead clipping uses Liang-Barsky on the viewport.** `GeometryRenderer.renderAll()` and `renderPreviewObjects()` receive `viewportBounds` from `CanvasPane.getViewportMathBounds()`, compute a clip rect inset by 5% via `GeometryUtils.computeClipRect()`, and clip lines/rays to it. Both the `FxLine` stroke and arrowheads terminate at the same clip boundary. `LineTool` receives a `viewportProvider` lambda and applies identical clipping to tool preview (ghost) lines/rays.
 - **Export arrowhead clipping uses the same 5% inset.** `ExportRenderer` clips lines/rays in math coordinates against a 5% inset of the export bounds, then transforms to pixel coordinates. For auto-fit exports, `computeAutoFitBounds()` uses a 10% margin (not 5%) so that data-edge points remain inside the clip rect after the 5% inset is applied.
 - **Export label offsets negate `labelOffsetY`.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction. The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY` to produce the same visual result.
+
+## Known Issues / Gaps
+
+- **Viewport clipping for points and circles is not yet implemented.** Design decisions are finalized:
+  - **Point clamping:** Free points created by direct click (PointTool on empty canvas, auto-constructed points in multi-click tools) and free points being dragged (SelectionTool) are clamped to the viewport clip rect (same 5% inset as lines/rays via `computeClipRect`). Derived points (intersections, semi-free points, construction applicator results) are NOT clamped — their positions are mathematically determined. Clamping is dynamic (evaluated at interaction time against current viewport); existing points are not retroactively enforced after pan/zoom. Both X and Y are clamped independently (point slides along edge). Clicks outside the clip rect are clamped, not rejected.
+  - **Circle clipping:** Circles are visually clipped to the same 5% inset clip rect by rendering only the arc segments inside the boundary. No arrowheads — arcs simply terminate. Applies to canvas rendering, circle tool preview, and both export paths (PNG and SVG). Implementation should be centralized (single clipping function called from all render paths).
