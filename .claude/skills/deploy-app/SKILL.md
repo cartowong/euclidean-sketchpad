@@ -56,3 +56,4 @@ Edit `src/main/kotlin/euclideansketchpad/Main.kt` — change the `APP_VERSION` c
 - Create an annotated git tag: `git tag -a v<version> -m "Release v<version>"`
 - **Remind the user that the commit and tag have NOT been pushed.** Suggest: `git push --follow-tags`
 - Explain that pushing the `v*` tag will trigger the GitHub Actions release workflow (`.github/workflows/release.yml`), which builds macOS (.dmg) and Windows (.msi) installers and creates a GitHub Release with them attached.
+- **IMPORTANT — tag must be pushed from `main`.** The release tag must point to a commit on `main` (typically the merge commit) and be pushed from `main`. If the tag is created on a feature branch and pushed before merging, the release workflow may fire against the branch commit. If the branch is later deleted, the release can fail or never trigger. Always: merge the PR first, switch to `main`, pull, then tag and push.
