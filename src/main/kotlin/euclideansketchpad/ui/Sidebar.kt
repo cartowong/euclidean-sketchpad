@@ -186,8 +186,8 @@ class Sidebar(
                 }
             }
         }
-        visCol.minWidth = 35.0
-        visCol.maxWidth = 35.0
+        visCol.minWidth = 55.0
+        visCol.maxWidth = 55.0
 
         val deleteCol = TableColumn<ObjectRow, Void>("Del")
         deleteCol.setCellFactory {
@@ -222,8 +222,8 @@ class Sidebar(
                 }
             }
         }
-        deleteCol.minWidth = 30.0
-        deleteCol.maxWidth = 30.0
+        deleteCol.minWidth = 40.0
+        deleteCol.maxWidth = 40.0
 
         objectTable.columns.addAll(idCol, typeCol, parentCol, labelCol, visCol, deleteCol)
 
@@ -280,8 +280,8 @@ class Sidebar(
                 }
             }
         }
-        deleteCol.minWidth = 30.0
-        deleteCol.maxWidth = 30.0
+        deleteCol.minWidth = 40.0
+        deleteCol.maxWidth = 40.0
 
         measurementTable.columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
         measurementTable.columns.addAll(idCol, typeCol, labelCol, measureCol, deleteCol)
@@ -309,8 +309,8 @@ class Sidebar(
                 }
             }
         }
-        applyCol.minWidth = 45.0
-        applyCol.maxWidth = 45.0
+        applyCol.minWidth = 60.0
+        applyCol.maxWidth = 60.0
 
         val fileCol = TableColumn<ConstructionRow, String>("File")
         fileCol.setCellValueFactory { SimpleStringProperty(it.value.construction.fileName) }
@@ -338,8 +338,8 @@ class Sidebar(
                 }
             }
         }
-        removeCol.minWidth = 30.0
-        removeCol.maxWidth = 30.0
+        removeCol.minWidth = 40.0
+        removeCol.maxWidth = 40.0
 
         constructionTable.columns.addAll(applyCol, fileCol, inputsCol, removeCol)
     }
