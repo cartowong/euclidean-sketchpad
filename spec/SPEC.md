@@ -15,6 +15,7 @@ A desktop application for creating geometric constructions using compass and str
 | Testing | JUnit 5 (geometry library unit tests only) |
 | Serialization | kotlinx.serialization (JSON) |
 | Distribution | `jpackage` for native installer; also runnable via `./gradlew run` |
+| UI theme | AtlantaFX Primer Light (user agent stylesheet) |
 | Input | Desktop only (mouse), no touch support |
 
 ---
@@ -169,7 +170,7 @@ Multi-click pattern:
 
 ### 4.1 Overall Layout
 
-Three-column layout. Initial window size: **1440x720**. Initial divider positions: **25% / 75%** (left edge at 25%, right edge at 75%).
+Three-column layout. Initial window size: **1440x720**. Initial divider positions: **30% / 70%** (left edge at 30%, right edge at 70%).
 
 ```
 +------------------+-------------------------------------------+------------------+
@@ -197,8 +198,8 @@ Three-column layout. Initial window size: **1440x720**. Initial divider position
 | Type | 120px fixed | Display type name |
 | Parents | flex | Comma-separated parent IDs |
 | Label | flex | Editable inline (double-click); commit triggers undo checkpoint |
-| Show | 35px fixed | Checkbox to toggle visibility. Lock icon during recording. |
-| Del | 30px fixed | "X" button to delete (with confirmation dialog). Lock icon during recording. |
+| Show | 55px fixed | Checkbox to toggle visibility. Lock icon during recording. |
+| Del | 40px fixed | "X" button to delete (with confirmation dialog). Lock icon during recording. |
 
 **Type display names** (exhaustive — matches `Sidebar.getTypeName()`):
 
@@ -235,7 +236,7 @@ Three-column layout. Initial window size: **1440x720**. Initial divider position
 | Type | 62px fixed | Display type name |
 | Label | flex | Object label |
 | Value | flex | Formatted measurement value |
-| Del | 30px fixed | "X" button to remove from table (does not delete object) |
+| Del | 40px fixed | "X" button to remove from table (does not delete object) |
 
 **Measurable types**: Segment (length, `"%.2f"`), Circle (circumference, `"%.2f"`), Angle (degrees, `"%.1f°"`), Region (area, `"%.2f"`).
 
@@ -245,10 +246,10 @@ Measurements update on every render (real-time during drag).
 
 | Column | Width | Description |
 |--------|-------|-------------|
-| Apply | 45px fixed | Button to start the apply flow |
+| Apply | 60px fixed | Button to start the apply flow |
 | File | flex | Construction filename (without `.json`) |
 | Inputs | flex | Comma-separated input type names |
-| Del | 30px fixed | "X" button to remove from table |
+| Del | 40px fixed | "X" button to remove from table |
 
 - Populated via Construction > Load Construction or Load from Folder.
 - Not persisted across sessions.

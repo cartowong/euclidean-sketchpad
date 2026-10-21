@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-20
+
+### Added
+
+- AtlantaFX Primer Light theme applied as the global user agent stylesheet, replacing the default Modena look
+
+### Changed
+
+- Widened fixed-width table columns to accommodate theme padding: Objects table Show (35→55px) and Del (30→40px), Custom Constructions table Apply (45→60px) and Del (30→40px), Measurements table Del (30→40px)
+- Widened sidebar panes: initial divider positions changed from 25%/75% to 30%/70%
+- Updated application screenshot
+
 ## [1.2.1] - 2026-10-20
 
 ### Changed

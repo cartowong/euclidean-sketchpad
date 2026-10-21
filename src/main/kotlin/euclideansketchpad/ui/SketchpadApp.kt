@@ -24,11 +24,14 @@ import javafx.scene.layout.VBox
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import javafx.stage.Stage
+import atlantafx.base.theme.PrimerLight
 import java.io.File
 
 class SketchpadApp : Application() {
 
     override fun start(stage: Stage) {
+        Application.setUserAgentStylesheet(PrimerLight().userAgentStylesheet)
+
         val manager = GeometricObjectManager()
         val undoManager = UndoManager(manager)
         val recorder = ConstructionRecorder(manager)
@@ -651,7 +654,7 @@ class SketchpadApp : Application() {
         val mainSplit = SplitPane()
         mainSplit.orientation = javafx.geometry.Orientation.HORIZONTAL
         mainSplit.items.addAll(sidebar.leftPane, centerColumn, sidebar.rightPane)
-        mainSplit.setDividerPositions(0.25, 0.75)
+        mainSplit.setDividerPositions(0.30, 0.70)
 
         val root = BorderPane()
         root.top = menuBar
