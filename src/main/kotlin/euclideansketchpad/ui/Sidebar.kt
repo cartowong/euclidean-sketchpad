@@ -12,6 +12,7 @@ import javafx.scene.control.*
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.control.cell.TextFieldTableCell
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.scene.text.Text
@@ -34,8 +35,15 @@ class Sidebar(
     private var externalSelectedIds = mutableSetOf<Int>()
     private var updatingFromExternal = false
 
+    var onCloseObjectList: (() -> Unit)? = null
+    var onCloseConstructions: (() -> Unit)? = null
+    var onCloseMeasurements: (() -> Unit)? = null
+
     val leftPane: VBox
     val rightPane: VBox
+    private val rightSplitPane: SplitPane
+    private val constructionsBox: VBox
+    private val measurementsBox: VBox
 
     data class ObjectRow(
         val id: Int,
@@ -66,32 +74,29 @@ class Sidebar(
         setupConstructionTable()
 
         // Left pane: checkbox + objects table
-        val objectLabel = Label("Objects")
-        objectLabel.styleClass.add("sidebar-header")
-        leftPane = VBox(4.0, showHiddenCheckbox, objectLabel, objectTable)
+        val objectHeader = makeHeader("Object List") { onCloseObjectList?.invoke() }
+        leftPane = VBox(4.0, showHiddenCheckbox, objectHeader, objectTable)
         leftPane.styleClass.add("sidebar-left")
         leftPane.padding = Insets(8.0)
         VBox.setVgrow(objectTable, Priority.ALWAYS)
 
         // Right pane: measurements + constructions in vertical split
-        val measurementLabel = Label("Measurements")
-        measurementLabel.styleClass.add("sidebar-header")
-        val constructionLabel = Label("Custom Constructions")
-        constructionLabel.styleClass.add("sidebar-header")
+        val constructionHeader = makeHeader("Custom Constructions") { onCloseConstructions?.invoke() }
+        val measurementHeader = makeHeader("Measurements") { onCloseMeasurements?.invoke() }
 
-        val topBox = VBox(4.0, constructionLabel, constructionTable)
+        constructionsBox = VBox(4.0, constructionHeader, constructionTable)
         VBox.setVgrow(constructionTable, Priority.ALWAYS)
-        val bottomBox = VBox(4.0, measurementLabel, measurementTable)
-        bottomBox.padding = Insets(8.0, 0.0, 0.0, 0.0)
+        measurementsBox = VBox(4.0, measurementHeader, measurementTable)
+        measurementsBox.padding = Insets(8.0, 0.0, 0.0, 0.0)
         VBox.setVgrow(measurementTable, Priority.ALWAYS)
 
-        val splitPane = SplitPane()
-        splitPane.items.addAll(topBox, bottomBox)
-        splitPane.orientation = javafx.geometry.Orientation.VERTICAL
-        splitPane.setDividerPositions(0.5)
-        VBox.setVgrow(splitPane, Priority.ALWAYS)
+        rightSplitPane = SplitPane()
+        rightSplitPane.items.addAll(constructionsBox, measurementsBox)
+        rightSplitPane.orientation = javafx.geometry.Orientation.VERTICAL
+        rightSplitPane.setDividerPositions(0.5)
+        VBox.setVgrow(rightSplitPane, Priority.ALWAYS)
 
-        rightPane = VBox(4.0, splitPane)
+        rightPane = VBox(4.0, rightSplitPane)
         rightPane.styleClass.add("sidebar-right")
         rightPane.padding = Insets(8.0)
     }
@@ -247,8 +252,8 @@ class Sidebar(
 
         val typeCol = TableColumn<MeasurementRow, String>("Type")
         typeCol.setCellValueFactory { SimpleStringProperty(it.value.type) }
-        typeCol.minWidth = 62.0
-        typeCol.maxWidth = 62.0
+        typeCol.minWidth = 120.0
+        typeCol.maxWidth = 120.0
 
         val labelCol = TableColumn<MeasurementRow, String>("Label")
         labelCol.setCellValueFactory { SimpleStringProperty(it.value.label) }
@@ -420,6 +425,42 @@ class Sidebar(
             }
         }
         updatingFromExternal = false
+    }
+
+    private fun makeHeader(title: String, onClose: () -> Unit): HBox {
+        val label = Label(title)
+        label.styleClass.add("sidebar-header")
+        val spacer = javafx.scene.layout.Region()
+        HBox.setHgrow(spacer, Priority.ALWAYS)
+        val closeBtn = Button("X")
+        closeBtn.styleClass.add("delete-button")
+        closeBtn.setOnAction { onClose() }
+        return HBox(4.0, label, spacer, closeBtn)
+    }
+
+    val isRightPaneEmpty: Boolean
+        get() = rightSplitPane.items.isEmpty()
+
+    fun setConstructionsVisible(visible: Boolean) {
+        if (visible) {
+            if (constructionsBox !in rightSplitPane.items) {
+                rightSplitPane.items.add(0, constructionsBox)
+            }
+        } else {
+            rightSplitPane.items.remove(constructionsBox)
+        }
+        if (rightSplitPane.items.size == 2) rightSplitPane.setDividerPositions(0.5)
+    }
+
+    fun setMeasurementsVisible(visible: Boolean) {
+        if (visible) {
+            if (measurementsBox !in rightSplitPane.items) {
+                rightSplitPane.items.add(measurementsBox)
+            }
+        } else {
+            rightSplitPane.items.remove(measurementsBox)
+        }
+        if (rightSplitPane.items.size == 2) rightSplitPane.setDividerPositions(0.5)
     }
 
     private fun getTypeName(obj: GeometricObject): String = when (obj) {
