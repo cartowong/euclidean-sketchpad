@@ -72,8 +72,9 @@ Check which branch you are on (`git branch --show-current`).
 - Do **NOT** create the git tag yet.
 - Push the branch: `git push -u origin <branch-name>`
 - Create a pull request: `gh pr create --title "Release v<version>" --body "<brief description of what changed in this release>"`
-- Tell the user: after the PR is merged, switch to `main`, pull, then create and push the tag:
+- Tell the user they can use the **`merge-release-pr`** skill to merge the PR, push the tag, and clean up the branch automatically. Or, they can do it manually:
   ```
+  gh pr merge <number> --merge --admin
   git checkout main && git pull
   git tag -a v<version> -m "Release v<version>"
   git push --follow-tags
