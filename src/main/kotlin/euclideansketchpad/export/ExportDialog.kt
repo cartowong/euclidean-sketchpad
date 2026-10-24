@@ -21,7 +21,8 @@ class ExportDialog(
     private val canvasPane: CanvasPane,
     private val manager: GeometricObjectManager,
     private val onExport: (ExportSettings, java.io.File) -> Unit,
-    private val onCustomModeChanged: (Boolean) -> Unit = {}
+    private val onCustomModeChanged: (Boolean) -> Unit = {},
+    private val onDialogClosed: () -> Unit = {}
 ) {
 
     private val stage = Stage()
@@ -101,6 +102,7 @@ class ExportDialog(
             canvasPane.exportPanMode = false
             onCustomModeChanged(false)
             clearOverlay()
+            onDialogClosed()
         }
 
         // React to method changes
@@ -138,6 +140,7 @@ class ExportDialog(
         onCustomModeChanged(false)
         clearOverlay()
         stage.close()
+        onDialogClosed()
     }
 
     private fun updateFieldStates() {

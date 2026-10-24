@@ -190,7 +190,7 @@ Three-column layout. Initial window size: **1440x720**. Initial divider position
 - **Center column**: `VBox` containing the toolbar and canvas. Not a `SplitPane` child — it sits between the two `SplitPane` children.
 - **Right pane**: vertical `SplitPane` with Custom Constructions table (top) and Measurements table (bottom). Divider at 50%.
 - **Table headers**: each table ("Object List", "Custom Constructions", "Measurements") has a header row with the title left-aligned and a close button ("X") right-aligned. Clicking the close button hides that table, equivalent to the corresponding View menu toggle.
-- **Pane visibility**: toggled via View menu or header close buttons. When all tables in a pane are hidden, the pane is removed from the outer `SplitPane`. When a table is shown again, its pane is re-added with default divider positions. Not persisted across sessions.
+- **Pane visibility**: toggled via View menu or header close buttons. When all tables in a pane are hidden, the pane is removed from the outer `SplitPane`. When a table is shown again, its pane is re-added with default divider positions. Not persisted across sessions. Both the View menu toggles and the header close buttons are disabled while the Export dialog is open.
 
 ### 4.2 Object List Table
 

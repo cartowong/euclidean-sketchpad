@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Table visibility toggles (View menu items and header close buttons) are disabled while the Export dialog is open, preventing layout changes during export
+
 ## [1.4.0] - 2026-10-23
 
 ### Added

@@ -209,18 +209,33 @@ class SketchpadApp : Application() {
             }
         }
 
+        // Forward declarations for view menu items disabled during export
+        lateinit var toggleObjectsItem: MenuItem
+        lateinit var toggleConstructionsItem: MenuItem
+        lateinit var toggleMeasurementsItem: MenuItem
+
         val exportItem = MenuItem("Export")
         exportItem.accelerator = KeyCombination.valueOf("Shortcut+E")
         exportItem.setOnAction {
             clearSelection()
             canvasPane.hoveredId = null
             requestRender()
+            toggleObjectsItem.isDisable = true
+            toggleConstructionsItem.isDisable = true
+            toggleMeasurementsItem.isDisable = true
+            sidebar.setCloseButtonsDisabled(true)
             val dialog = ExportDialog(stage, canvasPane, manager,
                 onExport = { settings, file ->
                     ExportRenderer.export(settings, manager, file)
                 },
                 onCustomModeChanged = { custom ->
                     toolbar.isDisable = custom
+                },
+                onDialogClosed = {
+                    toggleObjectsItem.isDisable = false
+                    toggleConstructionsItem.isDisable = false
+                    toggleMeasurementsItem.isDisable = false
+                    sidebar.setCloseButtonsDisabled(false)
                 }
             )
             dialog.show()
@@ -630,7 +645,7 @@ class SketchpadApp : Application() {
             }
         }
 
-        val toggleObjectsItem = MenuItem("Hide Object List")
+        toggleObjectsItem = MenuItem("Hide Object List")
         toggleObjectsItem.setOnAction {
             objectsVisible = !objectsVisible
             toggleObjectsItem.text = if (objectsVisible) "Hide Object List" else "Show Object List"
@@ -638,7 +653,7 @@ class SketchpadApp : Application() {
             updateMainSplitLayout()
         }
 
-        val toggleConstructionsItem = MenuItem("Hide Custom Constructions")
+        toggleConstructionsItem = MenuItem("Hide Custom Constructions")
         toggleConstructionsItem.setOnAction {
             constructionsVisible = !constructionsVisible
             toggleConstructionsItem.text = if (constructionsVisible) "Hide Custom Constructions" else "Show Custom Constructions"
@@ -646,7 +661,7 @@ class SketchpadApp : Application() {
             updateMainSplitLayout()
         }
 
-        val toggleMeasurementsItem = MenuItem("Hide Measurements")
+        toggleMeasurementsItem = MenuItem("Hide Measurements")
         toggleMeasurementsItem.setOnAction {
             measurementsVisible = !measurementsVisible
             toggleMeasurementsItem.text = if (measurementsVisible) "Hide Measurements" else "Show Measurements"

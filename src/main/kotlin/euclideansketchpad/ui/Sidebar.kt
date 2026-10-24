@@ -44,6 +44,9 @@ class Sidebar(
     private val rightSplitPane: SplitPane
     private val constructionsBox: VBox
     private val measurementsBox: VBox
+    private var objectCloseBtn: Button
+    private var constructionCloseBtn: Button
+    private var measurementCloseBtn: Button
 
     data class ObjectRow(
         val id: Int,
@@ -74,15 +77,18 @@ class Sidebar(
         setupConstructionTable()
 
         // Left pane: checkbox + objects table
-        val objectHeader = makeHeader("Object List") { onCloseObjectList?.invoke() }
+        val (objectHeader, objBtn) = makeHeader("Object List") { onCloseObjectList?.invoke() }
+        objectCloseBtn = objBtn
         leftPane = VBox(4.0, showHiddenCheckbox, objectHeader, objectTable)
         leftPane.styleClass.add("sidebar-left")
         leftPane.padding = Insets(8.0)
         VBox.setVgrow(objectTable, Priority.ALWAYS)
 
         // Right pane: measurements + constructions in vertical split
-        val constructionHeader = makeHeader("Custom Constructions") { onCloseConstructions?.invoke() }
-        val measurementHeader = makeHeader("Measurements") { onCloseMeasurements?.invoke() }
+        val (constructionHeader, conBtn) = makeHeader("Custom Constructions") { onCloseConstructions?.invoke() }
+        constructionCloseBtn = conBtn
+        val (measurementHeader, measBtn) = makeHeader("Measurements") { onCloseMeasurements?.invoke() }
+        measurementCloseBtn = measBtn
 
         constructionsBox = VBox(4.0, constructionHeader, constructionTable)
         VBox.setVgrow(constructionTable, Priority.ALWAYS)
@@ -427,7 +433,7 @@ class Sidebar(
         updatingFromExternal = false
     }
 
-    private fun makeHeader(title: String, onClose: () -> Unit): HBox {
+    private fun makeHeader(title: String, onClose: () -> Unit): Pair<HBox, Button> {
         val label = Label(title)
         label.styleClass.add("sidebar-header")
         val spacer = javafx.scene.layout.Region()
@@ -435,7 +441,13 @@ class Sidebar(
         val closeBtn = Button("X")
         closeBtn.styleClass.add("delete-button")
         closeBtn.setOnAction { onClose() }
-        return HBox(4.0, label, spacer, closeBtn)
+        return Pair(HBox(4.0, label, spacer, closeBtn), closeBtn)
+    }
+
+    fun setCloseButtonsDisabled(disabled: Boolean) {
+        objectCloseBtn.isDisable = disabled
+        constructionCloseBtn.isDisable = disabled
+        measurementCloseBtn.isDisable = disabled
     }
 
     val isRightPaneEmpty: Boolean
