@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-10-24
+
+### Added
+
+- Dragging with all objects selected now pans the viewport instead of moving objects, matching the ergonomic expectation that Select All + drag should scroll the canvas
+
+### Fixed
+
+- Tangent intersection points (linear-circle and circle-circle) no longer disappear due to floating-point rounding — relaxed the intersection discriminant tolerance from `1e-10` to `1e-5`
+
 ## [1.4.1] - 2026-10-23
 
 ### Fixed

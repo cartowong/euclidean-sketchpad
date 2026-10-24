@@ -114,11 +114,12 @@ All methods have default no-op implementations. `onEscapePressed` returns `true`
 
 - **Click an object**: toggle selection. No modifier key needed for multi-select.
 - **Selected objects** are rendered in blue (stroke and fill).
-- **Dragging**: works only when **all** selected objects pass `manager.isMovable()` (free or semi-free points). The tool:
+- **Dragging when all objects are selected**: if every object in the manager is selected, dragging pans the viewport (same transform math as Space+drag) instead of moving objects. No undo checkpoint is created. Objects are not deselected on release.
+- **Dragging (subset selection)**: works only when **all** selected objects pass `manager.isMovable()` (free or semi-free points). The tool:
   1. On mousedown, takes a snapshot.
   2. On drag, applies the displacement to each selected point via `manager.movePoint()`.
   3. On mouseup, creates an undo checkpoint. The entire drag is a single undo entry.
-- If any selected object is not movable, dragging does nothing.
+- If any selected object is not movable (and it's not an all-selected pan), dragging does nothing.
 
 ### 3.5 Line / Ray / Segment Tools
 

@@ -7,7 +7,7 @@ data class LinearData(val x1: Double, val y1: Double, val x2: Double, val y2: Do
 
 object IntersectionUtils {
 
-    private const val EPS = 1e-10
+    private const val EPS = 1e-5
 
     fun extractLinear(obj: GeometricObject): LinearData? {
         if (obj !is LinearLike || !obj.isDefined) return null

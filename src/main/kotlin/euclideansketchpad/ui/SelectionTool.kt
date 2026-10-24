@@ -13,14 +13,19 @@ class SelectionTool(
     private val hitTester: HitTester,
     private val undoManager: UndoManager,
     private val requestRender: () -> Unit,
-    private val viewportProvider: () -> DoubleArray? = { null }
+    private val viewportProvider: () -> DoubleArray? = { null },
+    private val allObjectsSelected: () -> Boolean = { false },
+    private val panViewport: (screenDx: Double, screenDy: Double) -> Unit = { _, _ -> }
 ) : Tool {
 
     val selectedIds = mutableSetOf<Int>()
 
     private var isDragging = false
+    private var isPanningDrag = false
     private var lastDragWorldX = 0.0
     private var lastDragWorldY = 0.0
+    private var lastDragScreenX = 0.0
+    private var lastDragScreenY = 0.0
 
     private var pressHitId: Int? = null
     private var wasAlreadySelected = false
@@ -37,8 +42,11 @@ class SelectionTool(
 
     override fun onMousePressed(e: MouseEvent, worldX: Double, worldY: Double) {
         isDragging = false
+        isPanningDrag = false
         lastDragWorldX = worldX
         lastDragWorldY = worldY
+        lastDragScreenX = e.screenX
+        lastDragScreenY = e.screenY
 
         val hit = hitTester.hitTest(e.x, e.y)
         if (hit != null) {
@@ -71,6 +79,16 @@ class SelectionTool(
 
     override fun onMouseDragged(e: MouseEvent, worldX: Double, worldY: Double) {
         if (selectedIds.isEmpty()) return
+
+        if (allObjectsSelected()) {
+            panViewport(e.screenX - lastDragScreenX, e.screenY - lastDragScreenY)
+            lastDragScreenX = e.screenX
+            lastDragScreenY = e.screenY
+            isPanningDrag = true
+            isDragging = true
+            return
+        }
+
         // Only drag if all selected objects are movable
         if (!selectedIds.all { manager.isMovable(it) }) return
 
@@ -101,14 +119,15 @@ class SelectionTool(
 
     override fun onMouseReleased(e: MouseEvent, worldX: Double, worldY: Double) {
         // If clicked (not dragged) on an already-selected object, deselect it now
-        if (!isDragging && wasAlreadySelected && pressHitId != null) {
+        if (!isDragging && !isPanningDrag && wasAlreadySelected && pressHitId != null) {
             selectedIds.remove(pressHitId)
             requestRender()
         }
-        if (isDragging) {
+        if (isDragging && !isPanningDrag) {
             undoManager.checkpoint()
         }
         isDragging = false
+        isPanningDrag = false
         pressHitId = null
         wasAlreadySelected = false
     }
