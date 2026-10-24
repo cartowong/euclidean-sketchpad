@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.4.1] - 2026-10-23
+
+### Fixed
+
+- Exported labels (PNG and SVG) now match their canvas positions — previously labels appeared ~8px closer to their parent point in exports due to a missing baseline shift that the canvas renderer applies via `scaleY = -1`
 
 ### Changed
 

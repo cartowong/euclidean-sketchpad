@@ -314,6 +314,11 @@ object ExportRenderer {
         }
 
         // Pass 5: Labels
+        // On canvas, text.scaleY = -1 (to un-mirror text in the y-flipped world group) pivots
+        // around the layout bounds center, shifting the visual baseline by (ascent - descent) px.
+        // Replicate that shift here so export labels match canvas positions.
+        val probe = Text("A").apply { font = Font.font(FONT_SIZE) }
+        val baselineShift = -(probe.layoutBounds.minY + probe.layoutBounds.maxY)
         for (obj in manager.allObjects()) {
             val meta = manager.getMetadata(obj.id) ?: continue
             if (!isExportable(meta) || !meta.labelVisible || meta.label == null) continue
@@ -323,7 +328,7 @@ object ExportRenderer {
             val text = Text(meta.label)
             text.font = Font.font(FONT_SIZE)
             text.x = tx(anchor.first) + meta.labelOffsetX
-            text.y = ty(anchor.second) - meta.labelOffsetY
+            text.y = ty(anchor.second) - meta.labelOffsetY + baselineShift
             text.fill = Color.BLACK
             group.children.add(text)
         }
@@ -513,7 +518,9 @@ object ExportRenderer {
             sb.appendLine("""  <circle cx="${fmt(tx(obj.x))}" cy="${fmt(ty(obj.y))}" r="$POINT_RADIUS" fill="black"/>""")
         }
 
-        // Pass 5: Labels
+        // Pass 5: Labels (same baseline shift as PNG — see comment there)
+        val probe = Text("A").apply { font = Font.font(FONT_SIZE) }
+        val baselineShift = -(probe.layoutBounds.minY + probe.layoutBounds.maxY)
         for (obj in manager.allObjects()) {
             val meta = manager.getMetadata(obj.id) ?: continue
             if (!isExportable(meta) || !meta.labelVisible || meta.label == null) continue
@@ -521,7 +528,7 @@ object ExportRenderer {
 
             val anchor = getObjectAnchor(obj, meta) ?: continue
             val lx = tx(anchor.first) + meta.labelOffsetX
-            val ly = ty(anchor.second) - meta.labelOffsetY
+            val ly = ty(anchor.second) - meta.labelOffsetY + baselineShift
             val escaped = meta.label!!.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             sb.appendLine("""  <text x="${fmt(lx)}" y="${fmt(ly)}" font-size="$FONT_SIZE" fill="black">$escaped</text>""")
         }

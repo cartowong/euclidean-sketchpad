@@ -1,14 +1,14 @@
 # Euclidean Sketchpad — Handoff Document
 
 **Date:** 2026-10-23
-**Branch:** `release/1.4.0`
+**Branch:** `main`
 
 ## Current State
 
 - **Build:** `./gradlew clean test` passes (136 tests). Clean build.
 - **Git:** `.claude/` is gitignored.
 - **Runtime:** `./gradlew run` launches the full app.
-- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.4.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
+- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.4.1.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
 - **Spec alignment:** All features described in `spec/SPEC.md` are implemented, including the `LinearLike` interface, 4 built-in constructions, specific type display names, "Custom Constructions" table rename, and viewport clipping for all object types.
 
 ## Architecture Notes
@@ -34,7 +34,7 @@
 - **Angle hit-testing uses zoom-aware arc radius.** Unlike other hit-test tiers that use the snap radius, the angle tier uses `ANGLE_ARC_RADIUS / scale` to match the visual arc size exactly. `Angle.containsPoint()` checks if the point is within the arc sector at this radius. First match wins (no distance tiebreaker), similar to regions.
 - **Table visibility is view-only state.** The View menu has Show/Hide toggles for Object List, Custom Constructions, and Measurements. Each table header also has an "X" close button wired to the same toggle. `Sidebar` exposes `setConstructionsVisible()`, `setMeasurementsVisible()`, and `isRightPaneEmpty` for the right pane's internal `SplitPane`. `SketchpadApp.updateMainSplitLayout()` rebuilds the outer `SplitPane` items based on which panes have visible content. Visibility is not persisted or undo-tracked.
 - **`javafx.scene.layout.Region` is not imported in `Sidebar.kt`** to avoid shadowing the geometry `Region` class used in the exhaustive `when` in `getTypeName()`. The layout `Region` (used as a spacer in header `HBox`es) is referenced by fully qualified name.
-- **Export label offsets negate `labelOffsetY`.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction. The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY` to produce the same visual result.
+- **Export label offsets negate `labelOffsetY` and add a baseline shift.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction and also shifts the visual baseline by `ascent - descent` pixels (due to JavaFX pivoting the scale around the layout bounds center). The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY + baselineShift` where `baselineShift = -(layoutBounds.minY + layoutBounds.maxY)` to match the canvas visual position.
 
 ## Known Issues / Gaps
 
