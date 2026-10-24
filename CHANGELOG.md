@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-10-23
+
+### Added
+
+- Angles are now hit-testable on the canvas: hover highlighting, selection with the Select tool, label assignment with the Label tool, and hiding with click all work on angle arcs
+- New `HitResult.OnAngle` variant and tier 2 in the hit-tester (between points and intersection previews), using zoom-aware arc radius matching the visual arc size
+- `Angle.containsPoint(x, y, arcRadiusWorld)` method for checking if a point falls inside the arc sector
+- View menu items to show/hide the Object List, Custom Constructions, and Measurements tables. Hiding all tables in a pane removes the pane from the layout; showing restores it
+- Close buttons on each table header (Object List, Custom Constructions, Measurements) that hide the corresponding table, equivalent to the View menu toggle
+
+### Changed
+
+- Renamed the left pane header from "Objects" to "Object List"
+- Widened the Measurements table Type column from 62px to 120px to match the Object List table
+- Updated application screenshot
+
 ## [1.3.0] - 2026-10-20
 
 ### Added

@@ -236,6 +236,7 @@ class CanvasPane(
         val hit = hitTester.hitTest(e.x, e.y)
         val hitId = when (hit) {
             is HitResult.ConstructedPoint -> hit.id
+            is HitResult.OnAngle -> hit.id
             is HitResult.OnLinear -> hit.id
             is HitResult.OnCircle -> hit.id
             is HitResult.OnRegion -> hit.id
@@ -324,6 +325,7 @@ class CanvasPane(
             val hit = hitTester.hitTest(screenX, screenY)
             val hitId = when (hit) {
                 is HitResult.ConstructedPoint -> hit.id
+                is HitResult.OnAngle -> hit.id
                 is HitResult.OnLinear -> hit.id
                 is HitResult.OnCircle -> hit.id
                 is HitResult.OnRegion -> hit.id
@@ -344,6 +346,7 @@ class CanvasPane(
 
         val newHoveredId = when (val hit = hitTester.hitTest(screenX, screenY)) {
             is HitResult.ConstructedPoint -> hit.id
+            is HitResult.OnAngle -> hit.id
             is HitResult.OnLinear -> hit.id
             is HitResult.OnCircle -> hit.id
             is HitResult.OnRegion -> hit.id

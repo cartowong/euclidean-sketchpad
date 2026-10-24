@@ -186,9 +186,11 @@ Three-column layout. Initial window size: **1440x720**. Initial divider position
 +------------------+-------------------------------------------+------------------+
 ```
 
-- **Left pane**: "Show hidden objects" checkbox + Object list table.
+- **Left pane**: "Show hidden objects" checkbox + Object List table.
 - **Center column**: `VBox` containing the toolbar and canvas. Not a `SplitPane` child — it sits between the two `SplitPane` children.
 - **Right pane**: vertical `SplitPane` with Custom Constructions table (top) and Measurements table (bottom). Divider at 50%.
+- **Table headers**: each table ("Object List", "Custom Constructions", "Measurements") has a header row with the title left-aligned and a close button ("X") right-aligned. Clicking the close button hides that table, equivalent to the corresponding View menu toggle.
+- **Pane visibility**: toggled via View menu or header close buttons. When all tables in a pane are hidden, the pane is removed from the outer `SplitPane`. When a table is shown again, its pane is re-added with default divider positions. Not persisted across sessions.
 
 ### 4.2 Object List Table
 
@@ -233,7 +235,7 @@ Three-column layout. Initial window size: **1440x720**. Initial divider position
 | Column | Width | Description |
 |--------|-------|-------------|
 | ID | 40px fixed | Object ID |
-| Type | 62px fixed | Display type name |
+| Type | 120px fixed | Display type name |
 | Label | flex | Object label |
 | Value | flex | Formatted measurement value |
 | Del | 40px fixed | "X" button to remove from table (does not delete object) |
@@ -342,15 +344,16 @@ The cache computes:
 
 ### 6.2 Hit-Testing Priority
 
-When multiple objects are within the snap radius, the hit tester checks 5 tiers in order:
+When multiple objects are within the snap radius, the hit tester checks 6 tiers in order:
 
 1. **Constructed points** (`PointLike` objects in the manager)
-2. **Intersection previews** (cached intersection candidates)
-3. **Linear objects** (`LinearLike` objects)
-4. **Circles**
-5. **Regions** (point-in-polygon test via `contains()`)
+2. **Angles** (point inside arc sector via `containsPoint()`, using zoom-aware arc radius)
+3. **Intersection previews** (cached intersection candidates)
+4. **Linear objects** (`LinearLike` objects)
+5. **Circles**
+6. **Regions** (point-in-polygon test via `contains()`)
 
-Distance is the tiebreaker within tiers 1-4. For regions, the first matching region wins.
+Distance is the tiebreaker within tiers 1, 3-5. For angles, the first matching angle wins. For regions, the first matching region wins.
 
 **Snap radius**: 10 screen pixels, converted to world coordinates at the current zoom level.
 
@@ -359,6 +362,7 @@ Distance is the tiebreaker within tiers 1-4. For regions, the first matching reg
 ```
 sealed class HitResult {
     ConstructedPoint(id)
+    OnAngle(id)
     IntersectionPreview(candidate)
     OnLinear(id)
     OnCircle(id)
@@ -448,6 +452,10 @@ All File menu items are disabled during construction recording.
 | Item | Shortcut | Description |
 |------|----------|-------------|
 | Show Grid / Hide Grid | ⌘G | Toggle grid visibility (label toggles) |
+| *(separator)* | | |
+| Show / Hide Object List | — | Toggle left pane visibility (label toggles) |
+| Show / Hide Custom Constructions | — | Toggle constructions table in right pane (label toggles) |
+| Show / Hide Measurements | — | Toggle measurements table in right pane (label toggles) |
 
 ### 8.5 About Menu
 

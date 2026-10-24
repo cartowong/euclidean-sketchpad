@@ -594,6 +594,17 @@ class SketchpadApp : Application() {
             midpointItem, parallelLineItem, perpendicularLineItem, reflectionPointItem
         )
 
+        // Center column: toolbar on top, canvas below
+        val centerColumn = VBox()
+        centerColumn.children.addAll(toolbar, canvasPane)
+        VBox.setVgrow(canvasPane, Priority.ALWAYS)
+
+        // 3-column horizontal SplitPane
+        val mainSplit = SplitPane()
+        mainSplit.orientation = javafx.geometry.Orientation.HORIZONTAL
+        mainSplit.items.addAll(sidebar.leftPane, centerColumn, sidebar.rightPane)
+        mainSplit.setDividerPositions(0.30, 0.70)
+
         val viewMenu = Menu("View")
         val toggleGridItem = MenuItem("Show Grid")
         toggleGridItem.accelerator = KeyCombination.valueOf("Shortcut+G")
@@ -602,7 +613,52 @@ class SketchpadApp : Application() {
             toggleGridItem.text = if (canvasPane.gridVisible) "Hide Grid" else "Show Grid"
             requestRender()
         }
-        viewMenu.items.addAll(toggleGridItem)
+        // Table visibility toggles
+        var objectsVisible = true
+        var constructionsVisible = true
+        var measurementsVisible = true
+
+        fun updateMainSplitLayout() {
+            mainSplit.items.clear()
+            if (objectsVisible) mainSplit.items.add(sidebar.leftPane)
+            mainSplit.items.add(centerColumn)
+            if (!sidebar.isRightPaneEmpty) mainSplit.items.add(sidebar.rightPane)
+            when {
+                objectsVisible && !sidebar.isRightPaneEmpty -> mainSplit.setDividerPositions(0.30, 0.70)
+                objectsVisible -> mainSplit.setDividerPositions(0.30)
+                !sidebar.isRightPaneEmpty -> mainSplit.setDividerPositions(0.70)
+            }
+        }
+
+        val toggleObjectsItem = MenuItem("Hide Object List")
+        toggleObjectsItem.setOnAction {
+            objectsVisible = !objectsVisible
+            toggleObjectsItem.text = if (objectsVisible) "Hide Object List" else "Show Object List"
+            if (objectsVisible) requestRender()
+            updateMainSplitLayout()
+        }
+
+        val toggleConstructionsItem = MenuItem("Hide Custom Constructions")
+        toggleConstructionsItem.setOnAction {
+            constructionsVisible = !constructionsVisible
+            toggleConstructionsItem.text = if (constructionsVisible) "Hide Custom Constructions" else "Show Custom Constructions"
+            sidebar.setConstructionsVisible(constructionsVisible)
+            updateMainSplitLayout()
+        }
+
+        val toggleMeasurementsItem = MenuItem("Hide Measurements")
+        toggleMeasurementsItem.setOnAction {
+            measurementsVisible = !measurementsVisible
+            toggleMeasurementsItem.text = if (measurementsVisible) "Hide Measurements" else "Show Measurements"
+            sidebar.setMeasurementsVisible(measurementsVisible)
+            updateMainSplitLayout()
+        }
+
+        viewMenu.items.addAll(toggleGridItem, SeparatorMenuItem(), toggleObjectsItem, toggleConstructionsItem, toggleMeasurementsItem)
+
+        sidebar.onCloseObjectList = { toggleObjectsItem.fire() }
+        sidebar.onCloseConstructions = { toggleConstructionsItem.fire() }
+        sidebar.onCloseMeasurements = { toggleMeasurementsItem.fire() }
 
         val aboutMenu = Menu("About")
         val aboutItem = MenuItem("About Euclidean Sketchpad")
@@ -644,17 +700,6 @@ class SketchpadApp : Application() {
         aboutMenu.items.add(aboutItem)
 
         menuBar.menus.addAll(fileMenu, actionMenu, constructionMenu, viewMenu, aboutMenu)
-
-        // Center column: toolbar on top, canvas below
-        val centerColumn = VBox()
-        centerColumn.children.addAll(toolbar, canvasPane)
-        VBox.setVgrow(canvasPane, Priority.ALWAYS)
-
-        // 3-column horizontal SplitPane
-        val mainSplit = SplitPane()
-        mainSplit.orientation = javafx.geometry.Orientation.HORIZONTAL
-        mainSplit.items.addAll(sidebar.leftPane, centerColumn, sidebar.rightPane)
-        mainSplit.setDividerPositions(0.30, 0.70)
 
         val root = BorderPane()
         root.top = menuBar

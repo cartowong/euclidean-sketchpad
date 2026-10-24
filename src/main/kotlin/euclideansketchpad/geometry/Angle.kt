@@ -68,6 +68,14 @@ class Angle(
         isDefined = true
     }
 
+    fun containsPoint(x: Double, y: Double, arcRadiusWorld: Double): Boolean {
+        if (!isDefined) return false
+        val dist = hypot(x - vertexX, y - vertexY)
+        if (dist > arcRadiusWorld) return false
+        val angle = normalizeAngle(atan2(y - vertexY, x - vertexX))
+        return isAngleInSweep(angle, normalizeAngle(startAngleRadians), sweepAngleRadians)
+    }
+
     fun measureDegrees(): Double {
         return sweepAngleRadians * 180.0 / PI
     }
