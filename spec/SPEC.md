@@ -31,7 +31,7 @@ src/main/kotlin/euclideansketchpad/
   persistence/      # JSON serialization/deserialization for diagrams and constructions
   ui/               # JavaFX views, canvas, tools, renderer, sidebar, toolbar
   export/           # PNG and SVG export (dialog + renderer)
-  Main.kt           # Application entry point
+  Main.kt           # Application entry point; dispatches --export to HeadlessExportApp
 
 src/main/resources/
   styles/geometry.css   # JavaFX CSS stylesheet
@@ -54,6 +54,7 @@ src/main/resources/
 | `DiagramSerializer` | persistence | Serializes/deserializes the full diagram to/from JSON. |
 | `ConstructionSerializer` | persistence | Saves constructions (with labels nulled) and loads construction files into `LoadedConstruction` records. |
 | `ExportRenderer` | export | Renders to PNG (via JavaFX snapshot) or SVG (manual string generation). |
+| `HeadlessExportApp` | export | CLI-driven headless export. Loads a diagram JSON and exports 6 files (canvas/custom/autofit × PNG/SVG). |
 
 ### 2.3 Coordinate System
 
@@ -652,6 +653,21 @@ Both PNG and SVG exports share the same rendering logic:
 **PNG**: builds a JavaFX `Group`, takes a snapshot via `Node.snapshot()`, writes via `ImageIO`.
 
 **SVG**: generates SVG XML string manually. Each object type maps to SVG elements: points → `<circle>`, linears → `<line>`, circles → `<circle>`, angles → `<path>` (arc), regions → `<polygon>`, labels → `<text>`. Coordinates are y-flipped. Numbers formatted to 2 decimal places.
+
+### 12.6 Headless Export (CLI)
+
+The app supports a `--export` CLI flag for batch export without a GUI window:
+
+```
+./gradlew run --args="--export <diagram.json> [outputDir]"
+```
+
+- **diagram.json** (required): path to a diagram file.
+- **outputDir** (optional, default `exports/`): directory for output files.
+
+Produces 6 files: `<name>_canvas.png/svg` (1000×700, default viewport), `<name>_custom.png/svg` (1920×1080, auto-fit bounds), `<name>_autofit.png/svg` (1920×auto, auto-fit bounds with aspect-ratio height). All exports use white background, no grid.
+
+`HeadlessExportApp` is a JavaFX `Application` subclass (required for PNG snapshot). It loads the diagram, runs `ExportRenderer.export()` for each combination, and calls `Platform.exit()`.
 
 ---
 

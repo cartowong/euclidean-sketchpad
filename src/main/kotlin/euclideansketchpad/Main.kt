@@ -1,10 +1,15 @@
 package euclideansketchpad
 
 import javafx.application.Application
+import euclideansketchpad.export.HeadlessExportApp
 import euclideansketchpad.ui.SketchpadApp
 
-const val APP_VERSION = "1.5.0"
+const val APP_VERSION = "1.5.1"
 
-fun main() {
-    Application.launch(SketchpadApp::class.java)
+fun main(args: Array<String>) {
+    if (args.isNotEmpty() && args[0] == "--export") {
+        HeadlessExportApp.run(args.drop(1).toTypedArray())
+    } else {
+        Application.launch(SketchpadApp::class.java)
+    }
 }
