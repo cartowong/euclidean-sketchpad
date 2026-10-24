@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-10-24
+
+### Added
+
+- Headless diagram export via `--export` CLI flag — produces 6 files (canvas/custom/autofit × PNG/SVG) without opening the GUI
+- `export-diagram` Claude Code skill for quick export verification
+
+### Fixed
+
+- SVG angle export now renders arcs in the correct direction — `startAngle` was not negated to account for the y-flip in pixel coordinates
+
 ## [1.5.0] - 2026-10-24
 
 ### Added

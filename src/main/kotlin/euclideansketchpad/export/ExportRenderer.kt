@@ -439,9 +439,9 @@ object ExportRenderer {
             val cy = ty(obj.vertexY)
             val r = ANGLE_ARC_RADIUS
 
-            // SVG y-axis is down, but ty() already flips positions. Angles stay in
-            // math convention; sweep adds (CW in math maps to CW in SVG y-down).
-            val startAngle = obj.startAngleRadians
+            // ty() flips y-positions but arc endpoint trig uses pixel-space angles.
+            // Negate startAngle so sin() yields the correct y-direction on screen.
+            val startAngle = -obj.startAngleRadians
             val endAngle = startAngle + obj.sweepAngleRadians
 
             val x1 = cx + r * cos(startAngle)

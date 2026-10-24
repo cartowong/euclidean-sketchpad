@@ -1,13 +1,14 @@
 # Euclidean Sketchpad — Handoff Document
 
 **Date:** 2026-10-24
-**Branch:** `release/1.5.0`
+**Branch:** `release/1.5.1`
 
 ## Current State
 
 - **Build:** `./gradlew clean test` passes (136 tests). Clean build.
 - **Git:** `.claude/` is gitignored.
 - **Runtime:** `./gradlew run` launches the full app.
+- **Headless export:** `./gradlew run --args="--export <diagram.json> [outDir]"` exports 6 files without opening the GUI.
 - **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.5.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
 - **Spec alignment:** All features described in `spec/SPEC.md` are implemented, including the `LinearLike` interface, 4 built-in constructions, specific type display names, "Custom Constructions" table rename, and viewport clipping for all object types.
 
@@ -35,6 +36,7 @@
 - **Table visibility is view-only state.** The View menu has Show/Hide toggles for Object List, Custom Constructions, and Measurements. Each table header also has an "X" close button wired to the same toggle. `Sidebar` exposes `setConstructionsVisible()`, `setMeasurementsVisible()`, and `isRightPaneEmpty` for the right pane's internal `SplitPane`. `SketchpadApp.updateMainSplitLayout()` rebuilds the outer `SplitPane` items based on which panes have visible content. Visibility is not persisted or undo-tracked.
 - **`javafx.scene.layout.Region` is not imported in `Sidebar.kt`** to avoid shadowing the geometry `Region` class used in the exhaustive `when` in `getTypeName()`. The layout `Region` (used as a spacer in header `HBox`es) is referenced by fully qualified name.
 - **Pan-on-all-selected uses callback lambdas.** `SelectionTool` receives `allObjectsSelected` and `panViewport` lambdas from `SketchpadApp`. When all manager objects are in `selectedIds`, dragging calls `panViewport` with screen-pixel deltas (same `appendTranslation(dx/mxx, dy/myy)` math as `CanvasPane`'s Space+drag). No undo checkpoint is created for pan drags, and objects are not deselected on release.
+- **Headless export requires JavaFX Application.** PNG export uses `Node.snapshot()`, which needs the JavaFX toolkit. `HeadlessExportApp` is a full `Application` subclass that receives args via a companion object static field (standard pattern since `Application.launch()` doesn't forward constructor args). `main()` in `Main.kt` dispatches to it when `--export` is the first arg; otherwise launches `SketchpadApp` as before — no behavior change for normal app launch.
 - **Export label offsets negate `labelOffsetY` and add a baseline shift.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction and also shifts the visual baseline by `ascent - descent` pixels (due to JavaFX pivoting the scale around the layout bounds center). The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY + baselineShift` where `baselineShift = -(layoutBounds.minY + layoutBounds.maxY)` to match the canvas visual position.
 
 ## Known Issues / Gaps
