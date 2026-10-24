@@ -9,7 +9,7 @@
 - **Git:** `.claude/` is gitignored.
 - **Runtime:** `./gradlew run` launches the full app.
 - **Headless export:** `./gradlew run --args="--export <diagram.json> [outDir]"` exports 6 files without opening the GUI.
-- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.5.0.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
+- **Packaging:** `./gradlew jpackage` produces `build/jpackage/EuclideanSketchpad-1.5.1.dmg` (~35 MB). `./gradlew jpackageImage` builds just the `.app` (faster, for testing). Not code-signed.
 - **Spec alignment:** All features described in `spec/SPEC.md` are implemented, including the `LinearLike` interface, 4 built-in constructions, specific type display names, "Custom Constructions" table rename, and viewport clipping for all object types.
 
 ## Architecture Notes
