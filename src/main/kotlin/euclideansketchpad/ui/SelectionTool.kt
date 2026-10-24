@@ -44,6 +44,7 @@ class SelectionTool(
         if (hit != null) {
             val hitId = when (hit) {
                 is HitResult.ConstructedPoint -> hit.id
+                is HitResult.OnAngle -> hit.id
                 is HitResult.OnLinear -> hit.id
                 is HitResult.OnCircle -> hit.id
                 is HitResult.OnRegion -> hit.id

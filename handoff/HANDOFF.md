@@ -1,7 +1,7 @@
 # Euclidean Sketchpad — Handoff Document
 
-**Date:** 2026-10-20
-**Branch:** `main`
+**Date:** 2026-10-23
+**Branch:** `release/1.4.0`
 
 ## Current State
 
@@ -31,6 +31,7 @@
 - **Viewport clipping uses a 2% margin inset.** `GeometryRenderer.renderAll()` and `renderPreviewObjects()` receive `viewportBounds` from `CanvasPane.getViewportMathBounds()`, compute a clip rect inset by 2% via `GeometryUtils.computeClipRect()`, and clip lines/rays/circles to it. Lines/rays use Liang-Barsky; circles use `clipCircleToArcs` which computes visible arc segments via circle-rectangle intersection. All tools receive a shared `viewportProvider` lambda from `SketchpadApp`.
 - **Point clamping is viewport-aware.** Free points created by `PointTool` or auto-constructed via `ToolUtils.resolveOrCreatePoint()` are clamped to the clip rect. `SelectionTool` clamps `FreePoint` drag destinations. Derived points (intersections, semi-free, construction results) are not clamped.
 - **Export clipping uses the same 2% inset.** `ExportRenderer` clips lines/rays/circles in math coordinates against a 2% inset of the export bounds, then transforms to pixel coordinates. For auto-fit exports, `computeAutoFitBounds()` uses an 8% margin (4× `VIEWPORT_MARGIN_FRACTION`) for comfortable padding beyond the clip boundary.
+- **Angle hit-testing uses zoom-aware arc radius.** Unlike other hit-test tiers that use the snap radius, the angle tier uses `ANGLE_ARC_RADIUS / scale` to match the visual arc size exactly. `Angle.containsPoint()` checks if the point is within the arc sector at this radius. First match wins (no distance tiebreaker), similar to regions.
 - **Export label offsets negate `labelOffsetY`.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction. The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY` to produce the same visual result.
 
 ## Known Issues / Gaps

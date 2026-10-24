@@ -342,15 +342,16 @@ The cache computes:
 
 ### 6.2 Hit-Testing Priority
 
-When multiple objects are within the snap radius, the hit tester checks 5 tiers in order:
+When multiple objects are within the snap radius, the hit tester checks 6 tiers in order:
 
 1. **Constructed points** (`PointLike` objects in the manager)
-2. **Intersection previews** (cached intersection candidates)
-3. **Linear objects** (`LinearLike` objects)
-4. **Circles**
-5. **Regions** (point-in-polygon test via `contains()`)
+2. **Angles** (point inside arc sector via `containsPoint()`, using zoom-aware arc radius)
+3. **Intersection previews** (cached intersection candidates)
+4. **Linear objects** (`LinearLike` objects)
+5. **Circles**
+6. **Regions** (point-in-polygon test via `contains()`)
 
-Distance is the tiebreaker within tiers 1-4. For regions, the first matching region wins.
+Distance is the tiebreaker within tiers 1, 3-5. For angles, the first matching angle wins. For regions, the first matching region wins.
 
 **Snap radius**: 10 screen pixels, converted to world coordinates at the current zoom level.
 
@@ -359,6 +360,7 @@ Distance is the tiebreaker within tiers 1-4. For regions, the first matching reg
 ```
 sealed class HitResult {
     ConstructedPoint(id)
+    OnAngle(id)
     IntersectionPreview(candidate)
     OnLinear(id)
     OnCircle(id)

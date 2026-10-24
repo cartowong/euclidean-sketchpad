@@ -16,6 +16,7 @@ data class IntersectionCandidate(
 
 sealed class HitResult {
     data class ConstructedPoint(val id: Int) : HitResult()
+    data class OnAngle(val id: Int) : HitResult()
     data class IntersectionPreview(val candidate: IntersectionCandidate) : HitResult()
     data class OnLinear(val id: Int) : HitResult()
     data class OnCircle(val id: Int) : HitResult()
@@ -124,7 +125,18 @@ class HitTester(
         }
         if (bestPointId >= 0) return HitResult.ConstructedPoint(bestPointId)
 
-        // Tier 2: Intersection previews from cache
+        // Tier 2: Angle objects (point inside arc sector)
+        val scale = abs(transform.mxx)
+        val arcRadiusWorld = if (scale > 0) GeometryUtils.ANGLE_ARC_RADIUS / scale else GeometryUtils.ANGLE_ARC_RADIUS
+        for (obj in manager.allObjects()) {
+            if (obj is Angle && obj.isDefined) {
+                val meta = manager.getMetadata(obj.id)
+                if (meta != null && (!meta.visible || meta.isLocked)) continue
+                if (obj.containsPoint(wx, wy, arcRadiusWorld)) return HitResult.OnAngle(obj.id)
+            }
+        }
+
+        // Tier 3: Intersection previews from cache
         var bestIxDist = Double.MAX_VALUE
         var bestIx: IntersectionCandidate? = null
         for (c in intersectionCache) {
@@ -136,7 +148,7 @@ class HitTester(
         }
         if (bestIx != null) return HitResult.IntersectionPreview(bestIx)
 
-        // Tier 3: Linear objects (segments, rays, lines)
+        // Tier 4: Linear objects (segments, rays, lines)
         var bestLinDist = Double.MAX_VALUE
         var bestLinId = -1
         for (obj in manager.allObjects()) {
@@ -152,7 +164,7 @@ class HitTester(
         }
         if (bestLinId >= 0) return HitResult.OnLinear(bestLinId)
 
-        // Tier 4: Circle objects
+        // Tier 5: Circle objects
         var bestCirDist = Double.MAX_VALUE
         var bestCirId = -1
         for (obj in manager.allObjects()) {
@@ -168,7 +180,7 @@ class HitTester(
         }
         if (bestCirId >= 0) return HitResult.OnCircle(bestCirId)
 
-        // Tier 5: Region objects (point inside polygon)
+        // Tier 6: Region objects (point inside polygon)
         for (obj in manager.allObjects()) {
             if (obj is Region && obj.isDefined) {
                 val meta = manager.getMetadata(obj.id)
