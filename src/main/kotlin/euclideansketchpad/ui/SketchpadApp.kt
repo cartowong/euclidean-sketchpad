@@ -106,7 +106,17 @@ class SketchpadApp : Application() {
 
         // Create tools
         val viewportProvider = { canvasPane.getViewportMathBounds() }
-        selectionTool = SelectionTool(manager, hitTester, undoManager, requestRender, viewportProvider)
+        selectionTool = SelectionTool(
+            manager, hitTester, undoManager, requestRender, viewportProvider,
+            allObjectsSelected = {
+                val sel = selectionTool.selectedIds
+                sel.isNotEmpty() && manager.allObjects().all { sel.contains(it.id) }
+            },
+            panViewport = { dx, dy ->
+                val t = canvasPane.transform
+                t.appendTranslation(dx / t.mxx, dy / t.myy)
+            }
+        )
         val pointTool = PointTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
         val lineTool = LineTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)
         val circleTool = CircleTool(manager, hitTester, undoManager, canvasPane.previewGroup, canvasPane.transform, requestRender, viewportProvider)

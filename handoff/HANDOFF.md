@@ -1,7 +1,7 @@
 # Euclidean Sketchpad — Handoff Document
 
-**Date:** 2026-10-23
-**Branch:** `main`
+**Date:** 2026-10-24
+**Branch:** `release/1.5.0`
 
 ## Current State
 
@@ -34,6 +34,7 @@
 - **Angle hit-testing uses zoom-aware arc radius.** Unlike other hit-test tiers that use the snap radius, the angle tier uses `ANGLE_ARC_RADIUS / scale` to match the visual arc size exactly. `Angle.containsPoint()` checks if the point is within the arc sector at this radius. First match wins (no distance tiebreaker), similar to regions.
 - **Table visibility is view-only state.** The View menu has Show/Hide toggles for Object List, Custom Constructions, and Measurements. Each table header also has an "X" close button wired to the same toggle. `Sidebar` exposes `setConstructionsVisible()`, `setMeasurementsVisible()`, and `isRightPaneEmpty` for the right pane's internal `SplitPane`. `SketchpadApp.updateMainSplitLayout()` rebuilds the outer `SplitPane` items based on which panes have visible content. Visibility is not persisted or undo-tracked.
 - **`javafx.scene.layout.Region` is not imported in `Sidebar.kt`** to avoid shadowing the geometry `Region` class used in the exhaustive `when` in `getTypeName()`. The layout `Region` (used as a spacer in header `HBox`es) is referenced by fully qualified name.
+- **Pan-on-all-selected uses callback lambdas.** `SelectionTool` receives `allObjectsSelected` and `panViewport` lambdas from `SketchpadApp`. When all manager objects are in `selectedIds`, dragging calls `panViewport` with screen-pixel deltas (same `appendTranslation(dx/mxx, dy/myy)` math as `CanvasPane`'s Space+drag). No undo checkpoint is created for pan drags, and objects are not deselected on release.
 - **Export label offsets negate `labelOffsetY` and add a baseline shift.** The canvas renderer positions labels at `anchorY + offsetY` in world coordinates and applies `scaleY = -1` to un-mirror text — the visual flip implicitly inverts the offset direction and also shifts the visual baseline by `ascent - descent` pixels (due to JavaFX pivoting the scale around the layout bounds center). The export renderers use `ty()` (which already flips y mathematically), so they apply `ty(anchorY) - offsetY + baselineShift` where `baselineShift = -(layoutBounds.minY + layoutBounds.maxY)` to match the canvas visual position.
 
 ## Known Issues / Gaps
