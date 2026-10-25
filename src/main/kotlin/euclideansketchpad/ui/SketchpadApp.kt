@@ -271,12 +271,13 @@ class SketchpadApp : Application() {
         selectParentsItem.setOnAction {
             val currentIds = selectionTool.selectedIds.toSet()
             if (currentIds.isNotEmpty()) {
-                val parentIds = mutableSetOf<Int>()
+                var parentIds: Set<Int>? = null
                 for (id in currentIds) {
                     val obj = manager.getObject(id) ?: continue
-                    parentIds.addAll(obj.parentIds)
+                    val objParents = obj.parentIds.toSet()
+                    parentIds = parentIds?.intersect(objParents) ?: objParents
                 }
-                setSelection(parentIds)
+                setSelection(parentIds ?: emptySet())
                 requestRender()
             }
         }
@@ -287,7 +288,7 @@ class SketchpadApp : Application() {
             if (currentIds.isNotEmpty()) {
                 val childIds = mutableSetOf<Int>()
                 for (obj in manager.allObjects()) {
-                    if (obj.parentIds.any { it in currentIds }) {
+                    if (currentIds.all { it in obj.parentIds }) {
                         childIds.add(obj.id)
                     }
                 }

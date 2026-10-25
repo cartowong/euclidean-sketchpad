@@ -415,8 +415,8 @@ All File menu items are disabled during construction recording.
 |------|----------|-------------|
 | Select All | ⌘A | Select all objects |
 | Deselect All | ⌘⇧A | Clear selection |
-| Select Parents | ⌘⇧P | Select all parents of currently selected objects |
-| Select Children | ⌘⇧C | Select all children of currently selected objects |
+| Select Parents | ⌘⇧P | Select common parents of all currently selected objects (intersection of parent lists) |
+| Select Children | ⌘⇧C | Select objects whose parents include all currently selected objects |
 | *(separator)* | | |
 | Show | ⌘⇧I | Make selected objects visible |
 | Hide | ⌘I | Hide selected objects (also hides their labels) |

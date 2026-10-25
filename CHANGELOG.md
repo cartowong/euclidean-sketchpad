@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] - 2026-10-25
+
+### Changed
+
+- "Select Children" (⌘⇧C) now selects objects whose parent list contains **all** currently selected objects, instead of any one of them
+- "Select Parents" (⌘⇧P) now selects the **common parents** (intersection) of all currently selected objects, instead of the union of all parent lists
+
 ## [1.5.1] - 2026-10-24
 
 ### Added
