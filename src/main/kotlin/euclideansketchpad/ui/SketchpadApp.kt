@@ -711,10 +711,27 @@ class SketchpadApp : Application() {
                 Label("Version $APP_VERSION"),
                 Label("A compass-and-straightedge construction tool for geometry education."),
                 Label("Copyright \u00a9 2026 Carto Wong"),
-                Label("Licensed under the MIT License"),
+                Label("Licensed under the GNU General Public License v3.0"),
                 Hyperlink("github.com/cartowong/euclidean-sketchpad").apply {
                     setOnAction {
                         hostServices.showDocument("https://github.com/cartowong/euclidean-sketchpad")
+                    }
+                },
+                Hyperlink("Third-Party Licenses").apply {
+                    setOnAction {
+                        val noticesDialog = Dialog<Void>()
+                        noticesDialog.title = "Third-Party Licenses"
+                        noticesDialog.dialogPane.buttonTypes.add(ButtonType.CLOSE)
+                        val noticesText = SketchpadApp::class.java.getResourceAsStream("/THIRD_PARTY_NOTICES")
+                            ?.bufferedReader()?.readText() ?: "Could not load third-party notices."
+                        val textArea = javafx.scene.control.TextArea(noticesText)
+                        textArea.isEditable = false
+                        textArea.isWrapText = true
+                        textArea.prefWidth = 600.0
+                        textArea.prefHeight = 400.0
+                        noticesDialog.dialogPane.content = textArea
+                        noticesDialog.initOwner(stage)
+                        noticesDialog.showAndWait()
                     }
                 }
             )

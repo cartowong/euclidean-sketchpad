@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.3] - 2026-10-30
+
+### Changed
+
+- License changed from MIT to GNU General Public License v3.0
+- About dialog now shows GPL v3.0 license and includes a "Third-Party Licenses" link that displays notices for AtlantaFX, OpenJFX, and kotlinx.serialization
+- Updated THIRD_PARTY_NOTICES with OpenJFX (GPL 2.0 + Classpath Exception) and kotlinx.serialization (Apache 2.0)
+
 ## [1.5.2] - 2026-10-25
 
 ### Changed

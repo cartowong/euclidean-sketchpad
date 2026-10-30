@@ -4,7 +4,7 @@ import javafx.application.Application
 import euclideansketchpad.export.HeadlessExportApp
 import euclideansketchpad.ui.SketchpadApp
 
-const val APP_VERSION = "1.5.2"
+const val APP_VERSION = "1.5.3"
 
 fun main(args: Array<String>) {
     if (args.isNotEmpty() && args[0] == "--export") {
